@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { authMiddleware } from "../../middleware/auth.js";
 import { validateCreateTask, validateUpdateTask } from "./task.validate.js";
 import {
     getAllTasks,
@@ -9,6 +10,8 @@ import {
 } from "./task.controller.js";
 
 const taskRouter = Router();
+
+taskRouter.use(authMiddleware);
 
 taskRouter.get("/", getAllTasks);
 taskRouter.get("/:id", getTaskById);
