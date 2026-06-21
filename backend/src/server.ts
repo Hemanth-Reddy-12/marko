@@ -4,12 +4,15 @@ import cors from "cors";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth.js";
 import { registerTaskRoutes } from "./modules/task/task.server.js";
+import { registerChatRoutes } from "./modules/chat/chat.server.js";
+import { env } from "./config/env.js";
+import { errorHandler } from "./middleware/error-handler.js";
 
 const app = express();
 
 app.use(
     cors({
-        origin: "http://localhost:5173",
+        origin: env.FRONTEND_URL,
         credentials: true,
     }),
 );
@@ -23,7 +26,12 @@ app.get("/", (_, res) => {
 });
 
 registerTaskRoutes(app);
+registerChatRoutes(app);
 
-app.listen(5000, () => {
-    console.log("server running");
+// Global error handling middleware (must be last)
+app.use(errorHandler);
+
+const PORT = Number.parseInt(env.PORT, 10);
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });

@@ -32,9 +32,12 @@ export async function getTaskById(req: Request, res: Response): Promise<void> {
 export async function createTask(req: Request, res: Response): Promise<void> {
     const userId = req.user!.id;
     const body = req.body as CreateTaskInput;
+    const { startDate, dueDate, ...rest } = body;
     const task = await prisma.task.create({
         data: {
-            ...body,
+            ...rest,
+            startDate: startDate ? new Date(startDate) : null,
+            dueDate: dueDate ? new Date(dueDate) : null,
             userId,
         },
     });
@@ -44,13 +47,22 @@ export async function createTask(req: Request, res: Response): Promise<void> {
 export async function updateTask(req: Request, res: Response): Promise<void> {
     const userId = req.user!.id;
     const id = getParamId(req);
-    const data = req.body as UpdateTaskInput;
+    const body = req.body as UpdateTaskInput;
 
     const existing = await prisma.task.findUnique({ where: { id } });
 
     if (!existing || existing.userId !== userId) {
         res.status(404).json({ error: "Task not found" });
         return;
+    }
+
+    const { startDate, dueDate, ...rest } = body;
+    const data: Record<string, unknown> = { ...rest };
+    if (startDate !== undefined) {
+        data.startDate = startDate ? new Date(startDate) : null;
+    }
+    if (dueDate !== undefined) {
+        data.dueDate = dueDate ? new Date(dueDate) : null;
     }
 
     const task = await prisma.task.update({ where: { id }, data });

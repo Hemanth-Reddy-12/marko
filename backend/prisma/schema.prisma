@@ -44,11 +44,12 @@ enum CreatedBy {
 model Task {
   id          String     @id @default(cuid())
   title       String
-  description String?
-  notes       String?    @db.Text
+  description String?    @db.Text
   type        TaskType
   taskStatus  TaskStatus
   priority    Priority
+  startDate   DateTime?
+  dueDate     DateTime?
   taskSource  TaskSource
   createdBy   CreatedBy
   createdAt   DateTime   @default(now())

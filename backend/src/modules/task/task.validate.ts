@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
+import { z } from "zod";
 import {
     TaskType,
     TaskStatus,
@@ -7,168 +8,68 @@ import {
     CreatedBy,
 } from "../../generated/prisma/index.js";
 
-const TASK_TYPE_VALUES = Object.values(TaskType) as string[];
-const TASK_STATUS_VALUES = Object.values(TaskStatus) as string[];
-const PRIORITY_VALUES = Object.values(Priority) as string[];
-const TASK_SOURCE_VALUES = Object.values(TaskSource) as string[];
-const CREATED_BY_VALUES = Object.values(CreatedBy) as string[];
+/** Helper to create native enum schema from Prisma enums */
+const enumSchema = (EnumObj: any) => z.nativeEnum(EnumObj);
 
-function isIn(value: string, values: string[]): boolean {
-    return values.includes(value);
-}
+/** Optional ISO‑date string validation */
+const isoDate = z
+    .string()
+    .refine((val) => !isNaN(Date.parse(val)), { message: "must be a valid ISO date string" })
+    .optional();
 
-export function validateCreateTask(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-): void {
-    const errors: string[] = [];
-    const body = req.body as Record<string, unknown> | null | undefined;
+/** Schema for creating a task */
+const createTaskSchema = z.object({
+    title: z.string().min(1, { message: "title is required" }),
+    description: z.string().optional(),
+    type: enumSchema(TaskType),
+    taskStatus: enumSchema(TaskStatus),
+    priority: enumSchema(Priority),
+    startDate: isoDate,
+    dueDate: isoDate,
+    taskSource: enumSchema(TaskSource),
+    createdBy: enumSchema(CreatedBy),
+});
 
-    if (!body || typeof body !== "object") {
-        res.status(400).json({ errors: ["Request body must be an object"] });
-        return;
-    }
+/** Schema for updating a task (all fields optional) */
+const updateTaskSchema = z.object({
+    title: z.string().optional(),
+    description: z.string().optional(),
+    type: enumSchema(TaskType).optional(),
+    taskStatus: enumSchema(TaskStatus).optional(),
+    priority: enumSchema(Priority).optional(),
+    startDate: z.union([z.string(), z.null()]).optional().refine((val) => {
+        if (val === null || val === undefined) return true;
+        return !isNaN(Date.parse(val as string));
+    }, { message: "startDate must be a valid ISO date string or null" }),
+    dueDate: z.union([z.string(), z.null()]).optional().refine((val) => {
+        if (val === null || val === undefined) return true;
+        return !isNaN(Date.parse(val as string));
+    }, { message: "dueDate must be a valid ISO date string or null" }),
+    taskSource: enumSchema(TaskSource).optional(),
+    createdBy: enumSchema(CreatedBy).optional(),
+}).strict();
 
-    if (!body.title || typeof body.title !== "string") {
-        errors.push("title is required and must be a string");
-    }
-
-    if (
-        body.description !== undefined &&
-        typeof body.description !== "string"
-    ) {
-        errors.push("description must be a string");
-    }
-
-    if (body.notes !== undefined && typeof body.notes !== "string") {
-        errors.push("notes must be a string");
-    }
-
-    if (typeof body.type !== "string" || !isIn(body.type, TASK_TYPE_VALUES)) {
-        errors.push(`type must be one of: ${TASK_TYPE_VALUES.join(", ")}`);
-    }
-
-    if (
-        typeof body.taskStatus !== "string" ||
-        !isIn(body.taskStatus, TASK_STATUS_VALUES)
-    ) {
-        errors.push(
-            `taskStatus must be one of: ${TASK_STATUS_VALUES.join(", ")}`,
-        );
-    }
-
-    if (
-        typeof body.priority !== "string" ||
-        !isIn(body.priority, PRIORITY_VALUES)
-    ) {
-        errors.push(`priority must be one of: ${PRIORITY_VALUES.join(", ")}`);
-    }
-
-    if (
-        typeof body.taskSource !== "string" ||
-        !isIn(body.taskSource, TASK_SOURCE_VALUES)
-    ) {
-        errors.push(
-            `taskSource must be one of: ${TASK_SOURCE_VALUES.join(", ")}`,
-        );
-    }
-
-    if (
-        typeof body.createdBy !== "string" ||
-        !isIn(body.createdBy, CREATED_BY_VALUES)
-    ) {
-        errors.push(
-            `createdBy must be one of: ${CREATED_BY_VALUES.join(", ")}`,
-        );
-    }
-
-    if (errors.length > 0) {
+/** Middleware for validating task creation */
+export function validateCreateTask(req: Request, res: Response, next: NextFunction): void {
+    const result = createTaskSchema.safeParse(req.body);
+    if (!result.success) {
+        const errors = result.error.issues.map((i) => i.message);
         res.status(400).json({ errors });
         return;
     }
-
+    req.body = result.data;
     next();
 }
 
-export function validateUpdateTask(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-): void {
-    const errors: string[] = [];
-    const body = req.body as Record<string, unknown> | null | undefined;
-
-    if (!body || typeof body !== "object") {
-        res.status(400).json({ errors: ["Request body must be an object"] });
-        return;
-    }
-
-    if (body.title !== undefined && typeof body.title !== "string") {
-        errors.push("title must be a string");
-    }
-
-    if (
-        body.description !== undefined &&
-        typeof body.description !== "string"
-    ) {
-        errors.push("description must be a string");
-    }
-
-    if (body.notes !== undefined && typeof body.notes !== "string") {
-        errors.push("notes must be a string");
-    }
-
-    if (
-        body.type !== undefined &&
-        (typeof body.type !== "string" ||
-            !isIn(body.type as string, TASK_TYPE_VALUES))
-    ) {
-        errors.push(`type must be one of: ${TASK_TYPE_VALUES.join(", ")}`);
-    }
-
-    if (
-        body.taskStatus !== undefined &&
-        (typeof body.taskStatus !== "string" ||
-            !isIn(body.taskStatus as string, TASK_STATUS_VALUES))
-    ) {
-        errors.push(
-            `taskStatus must be one of: ${TASK_STATUS_VALUES.join(", ")}`,
-        );
-    }
-
-    if (
-        body.priority !== undefined &&
-        (typeof body.priority !== "string" ||
-            !isIn(body.priority as string, PRIORITY_VALUES))
-    ) {
-        errors.push(`priority must be one of: ${PRIORITY_VALUES.join(", ")}`);
-    }
-
-    if (
-        body.taskSource !== undefined &&
-        (typeof body.taskSource !== "string" ||
-            !isIn(body.taskSource as string, TASK_SOURCE_VALUES))
-    ) {
-        errors.push(
-            `taskSource must be one of: ${TASK_SOURCE_VALUES.join(", ")}`,
-        );
-    }
-
-    if (
-        body.createdBy !== undefined &&
-        (typeof body.createdBy !== "string" ||
-            !isIn(body.createdBy as string, CREATED_BY_VALUES))
-    ) {
-        errors.push(
-            `createdBy must be one of: ${CREATED_BY_VALUES.join(", ")}`,
-        );
-    }
-
-    if (errors.length > 0) {
+/** Middleware for validating task updates */
+export function validateUpdateTask(req: Request, res: Response, next: NextFunction): void {
+    const result = updateTaskSchema.safeParse(req.body);
+    if (!result.success) {
+        const errors = result.error.issues.map((i) => i.message);
         res.status(400).json({ errors });
         return;
     }
-
+    req.body = result.data;
     next();
 }
+

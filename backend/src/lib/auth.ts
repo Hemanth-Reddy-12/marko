@@ -1,26 +1,35 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import prisma from "../config/db.js";
+import { env } from "../config/env.js";
 
 export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),
-    trustedOrigins: ["http://localhost:5173"],
+    secret: env.BETTER_AUTH_SECRET,
+    trustedOrigins: [env.FRONTEND_URL],
     emailAndPassword: {
         enabled: true,
     },
+    // Cast to any to avoid strict type issues when providers are optional
     socialProviders: {
-        github: {
-            clientId: process.env.GITHUB_CLIENT_ID as string,
-            clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
-        },
-        google: {
-            clientId: process.env.GOOGLE_CLIENT_ID as string,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-            prompt: "select_account",
-        },
-    },
+        github:
+            env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET
+                ? {
+                      clientId: env.GITHUB_CLIENT_ID,
+                      clientSecret: env.GITHUB_CLIENT_SECRET,
+                  }
+                : undefined,
+        google:
+            env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
+                ? {
+                      clientId: env.GOOGLE_CLIENT_ID,
+                      clientSecret: env.GOOGLE_CLIENT_SECRET,
+                      prompt: "select_account",
+                  }
+                : undefined,
+    } as any,
     experimental: {
         joins: true,
     },
