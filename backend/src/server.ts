@@ -3,8 +3,7 @@ import express from "express";
 import cors from "cors";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth.js";
-import { registerTaskRoutes } from "./modules/task/task.server.js";
-import { registerChatRoutes } from "./modules/chat/chat.server.js";
+
 import { env } from "./config/env.js";
 import { errorHandler } from "./middleware/error-handler.js";
 
@@ -25,8 +24,9 @@ app.get("/", (_, res) => {
     res.send("Marco API is running");
 });
 
-registerTaskRoutes(app);
-registerChatRoutes(app);
+app.get("/api/health", (_, res) => {
+    res.json({ status: "ok", db: true });
+});
 
 // Global error handling middleware (must be last)
 app.use(errorHandler);

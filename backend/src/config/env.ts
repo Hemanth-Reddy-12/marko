@@ -13,8 +13,16 @@ const envSchema = z.object({
     GITHUB_CLIENT_SECRET: z.string().optional(),
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
-    OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required"),
-    BASE_URL: z.string().min(1, "BASE_URL is required"),
+    REDIS_URL: z.string().default("redis://localhost:6379"),
+    AI_PROVIDER: z
+        .enum(["openai", "gemini", "mock"])
+        .default("openai"),
+    OPENAI_API_KEY: z.string().optional(),
+    OPENAI_MODEL: z.string().default("gpt-4o-mini"),
+    OPENAI_BASE_URL: z.string().optional(),
+    GEMINI_API_KEY: z.string().optional(),
+    GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
+    BASE_URL: z.string().default("http://localhost:5000"),
 });
 
 const parsed = envSchema.safeParse(process.env);

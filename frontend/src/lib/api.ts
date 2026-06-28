@@ -1,24 +1,34 @@
-export async function request<T>(path: string, init?: RequestInit): Promise<T> {
-    const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
-    const url = `${base}${path}`;
-    const response = await fetch(url, {
-        credentials: "include",
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+export async function fetchApi<T>(
+    endpoint: string,
+    options: RequestInit = {}
+): Promise<T> {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
         headers: {
             "Content-Type": "application/json",
-            ...(init?.headers ?? {}),
+            ...options.headers,
         },
-        ...init,
+        // Needed for better-auth cookies to be sent along with API requests
+        credentials: "include",
     });
+
     if (!response.ok) {
-        const text = await response.text();
-        let errMsg = `${response.status} ${response.statusText}`;
+        let errorMessage = "An error occurred";
         try {
-            const parsed = JSON.parse(text);
-            errMsg = parsed.error ?? JSON.stringify(parsed);
-        } catch (_) {}
-        throw new Error(errMsg);
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch {
+            // Ignore JSON parse errors for non-JSON error responses
+        }
+        throw new Error(errorMessage);
     }
-    // 204 No Content
-    if (response.status === 204) return undefined as unknown as T;
-    return (await response.json()) as T;
+
+    // Handle 204 No Content
+    if (response.status === 204) {
+        return {} as T;
+    }
+
+    return response.json();
 }
