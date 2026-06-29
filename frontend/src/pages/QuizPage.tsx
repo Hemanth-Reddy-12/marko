@@ -1,11 +1,11 @@
 import * as React from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { fetchApi } from "@/lib/api";
-import { LessonViewer } from "@/features/lesson/components/LessonViewer";
+import { QuizInterface } from "@/features/quiz/components/QuizInterface";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, CheckCircle2, Lock, Circle, Play, AlertCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Lock, Circle, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CourseHeader {
@@ -26,7 +26,7 @@ const statusConfig = {
     COMPLETED: { icon: CheckCircle2, color: "text-emerald-500" },
 } as const;
 
-export function LessonPage() {
+export function QuizPage() {
     const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
     const navigate = useNavigate();
     const [course, setCourse] = React.useState<CourseHeader | null>(null);
@@ -37,7 +37,6 @@ export function LessonPage() {
 
         const loadCourseInfo = async () => {
             try {
-                // Fetch course info to render the sidebar list
                 const data = await fetchApi<CourseHeader>(`/api/courses/${courseId}`);
                 setCourse(data);
             } catch (err) {
@@ -50,6 +49,18 @@ export function LessonPage() {
         loadCourseInfo();
     }, [courseId]);
 
+    const handleContinue = () => {
+        if (!course) return;
+        const currentLessonIndex = course.lessons.findIndex(l => l.id === lessonId);
+        if (currentLessonIndex !== -1 && currentLessonIndex < course.lessons.length - 1) {
+            const nextLesson = course.lessons[currentLessonIndex + 1];
+            navigate(`/courses/${courseId}/lessons/${nextLesson.id}`);
+        } else {
+            // End of course, navigate to dashboard or interview room
+            navigate(`/courses/${courseId}`);
+        }
+    };
+
     if (!courseId || !lessonId) {
         return <div className="p-8 text-center text-red-500">Invalid URL parameters</div>;
     }
@@ -60,7 +71,7 @@ export function LessonPage() {
             <div className="w-80 border-r border-zinc-200/80 bg-zinc-50/50 flex flex-col shrink-0 hidden md:flex">
                 <div className="p-4 flex items-center gap-3">
                     <button
-                        onClick={() => navigate(`/courses/${courseId}`)}
+                        onClick={() => navigate(`/courses/${courseId}/lessons/${lessonId}`)}
                         className="size-11 rounded-full flex items-center justify-center hover:bg-zinc-200 transition-colors"
                     >
                         <ArrowLeft className="size-5 text-zinc-600" />
@@ -135,7 +146,7 @@ export function LessonPage() {
                 {/* Mobile Back Button */}
                 <div className="md:hidden border-b border-zinc-200/80 p-3 flex items-center gap-3">
                     <button
-                        onClick={() => navigate(`/courses/${courseId}`)}
+                        onClick={() => navigate(`/courses/${courseId}/lessons/${lessonId}`)}
                         className="size-11 rounded-full flex items-center justify-center hover:bg-zinc-100"
                     >
                         <ArrowLeft className="size-5 text-zinc-600" />
@@ -146,21 +157,12 @@ export function LessonPage() {
                 </div>
 
                 <ScrollArea className="flex-1">
-                    {(() => {
-                        const currentLessonIndex = course?.lessons.findIndex(l => l.id === lessonId) ?? -1;
-                        const nextLesson = course && currentLessonIndex !== -1 && currentLessonIndex < course.lessons.length - 1
-                            ? course.lessons[currentLessonIndex + 1]
-                            : null;
-
-                        return (
-                            <LessonViewer
-                                courseId={courseId}
-                                lessonId={lessonId}
-                                key={lessonId}
-                                onNext={() => navigate(`/courses/${courseId}/lessons/${lessonId}/quiz`)}
-                            />
-                        );
-                    })()}
+                    <QuizInterface 
+                        courseId={courseId} 
+                        lessonId={lessonId} 
+                        onContinue={handleContinue} 
+                        key={`${courseId}-${lessonId}`} 
+                    />
                 </ScrollArea>
             </div>
         </div>

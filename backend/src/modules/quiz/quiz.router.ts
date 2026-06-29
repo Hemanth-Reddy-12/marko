@@ -1,14 +1,12 @@
 import { Router } from "express";
-import { getLesson } from "./lesson.controller.js";
+import { getQuiz, attemptQuiz } from "./quiz.controller.js";
 import { authMiddleware } from "../../middleware/auth.js";
-
-import quizRouter from "../quiz/quiz.router.js";
 
 const router = Router({ mergeParams: true });
 
 router.use(authMiddleware);
 
-router.get("/:lessonId", getLesson);
-router.use("/:lessonId/quiz", quizRouter);
+router.get("/", getQuiz);
+router.post("/attempt", attemptQuiz);
 
 export default router;

@@ -6,6 +6,7 @@ import { HealthCheckPage } from "@/pages/HealthCheckPage";
 import { CourseDetailsPage } from "@/pages/CourseDetailsPage";
 import { CoursesPage } from "@/pages/CoursesPage";
 import { LessonPage } from "@/pages/LessonPage";
+import { QuizPage } from "@/pages/QuizPage";
 
 const App = () => {
     return (
@@ -20,6 +21,7 @@ const App = () => {
                     <Route path="/courses" element={<CoursesPage />} />
                     <Route path="/courses/:courseId" element={<CourseDetailsPage />} />
                     <Route path="/courses/:courseId/lessons/:lessonId" element={<LessonPage />} />
+                    <Route path="/courses/:courseId/lessons/:lessonId/quiz" element={<QuizPage />} />
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 </Route>
             </Routes>

@@ -17,12 +17,10 @@ import { Button } from "@/components/ui/button";
 interface LessonViewerProps {
     courseId: string;
     lessonId: string;
-    nextLessonId?: string;
-    nextLessonTitle?: string;
-    onNext?: (nextId: string) => void;
+    onNext?: (id: string) => void;
 }
 
-export function LessonViewer({ courseId, lessonId, nextLessonId, nextLessonTitle, onNext }: LessonViewerProps) {
+export function LessonViewer({ courseId, lessonId, onNext }: LessonViewerProps) {
     const [lesson, setLesson] = React.useState<LessonResponse | null>(null);
     const [loading, setLoading] = React.useState(true);
     const [statusText, setStatusText] = React.useState("Loading lesson...");
@@ -157,17 +155,17 @@ export function LessonViewer({ courseId, lessonId, nextLessonId, nextLessonTitle
                 </ReactMarkdown>
             </div>
 
-            {nextLessonId && onNext && (
+            {onNext && (
                 <div className="mt-16 pt-8 border-t border-zinc-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex flex-col gap-1 min-w-0">
-                        <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Next Topic</span>
-                        <span className="text-sm font-semibold text-zinc-900 truncate">{nextLessonTitle || "Continue to next lesson"}</span>
+                        <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Knowledge Check</span>
+                        <span className="text-sm font-semibold text-zinc-900 truncate">Test your understanding before continuing</span>
                     </div>
                     <Button
-                        onClick={() => onNext(nextLessonId)}
+                        onClick={() => onNext(lessonId)}
                         className="bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm flex items-center gap-2 shrink-0"
                     >
-                        <span>Continue</span>
+                        <span>Take Lesson Quiz</span>
                         <ArrowRight className="size-4" />
                     </Button>
                 </div>
