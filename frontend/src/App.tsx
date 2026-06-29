@@ -5,6 +5,7 @@ import { DashboardPage } from "@/pages/DashboardPage";
 import { HealthCheckPage } from "@/pages/HealthCheckPage";
 import { CourseDetailsPage } from "@/pages/CourseDetailsPage";
 import { CoursesPage } from "@/pages/CoursesPage";
+import { LessonPage } from "@/pages/LessonPage";
 
 const App = () => {
     return (
@@ -18,6 +19,7 @@ const App = () => {
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/courses" element={<CoursesPage />} />
                     <Route path="/courses/:courseId" element={<CourseDetailsPage />} />
+                    <Route path="/courses/:courseId/lessons/:lessonId" element={<LessonPage />} />
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 </Route>
             </Routes>

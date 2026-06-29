@@ -1,0 +1,125 @@
+import type { Request, Response, NextFunction } from "express";
+import prisma from "../../config/db.js";
+import { getLessonParamsSchema } from "./lesson.validate.js";
+import { runContentAgent } from "../../agents/content.agent.js";
+import { GenerationStatus, LessonStatus } from "../../generated/prisma/index.js";
+
+export async function getLesson(
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> {
+    try {
+        const userId = (req as any).user?.id;
+        if (!userId) {
+            res.status(401).json({ error: "Unauthorized" });
+            return;
+        }
+
+        const paramsParse = getLessonParamsSchema.safeParse(req.params);
+        if (!paramsParse.success) {
+            res.status(400).json({ error: "Invalid parameters" });
+            return;
+        }
+
+        const { courseId, lessonId } = paramsParse.data;
+
+        // Verify the user owns the course
+        const course = await prisma.course.findUnique({
+            where: { id: courseId },
+        });
+
+        if (!course) {
+            res.status(404).json({ error: "Course not found" });
+            return;
+        }
+
+        if (course.userId !== userId) {
+            res.status(403).json({ error: "Forbidden" });
+            return;
+        }
+
+        let wasNewlyLocked = false;
+        let currentLesson = null;
+
+        // 1. Optimistic Lock Check & Update via Transaction
+        await prisma.$transaction(async (tx) => {
+            const lesson = await tx.lesson.findUnique({
+                where: { id: lessonId, courseId },
+            });
+
+            if (!lesson) {
+                return;
+            }
+
+            // Enforce sequential access
+            if (lesson.status === LessonStatus.LOCKED) {
+                throw new Error("Lesson is locked");
+            }
+
+            if (lesson.generationStatus === GenerationStatus.NOT_GENERATED || lesson.generationStatus === GenerationStatus.FAILED) {
+                // Lock it to GENERATING
+                currentLesson = await tx.lesson.update({
+                    where: { id: lessonId },
+                    data: { generationStatus: GenerationStatus.GENERATING },
+                });
+                wasNewlyLocked = true;
+            } else {
+                currentLesson = lesson;
+            }
+        });
+
+        if (!currentLesson) {
+            res.status(404).json({ error: "Lesson not found" });
+            return;
+        }
+
+        // If it's already generated, return it instantly
+        if ((currentLesson as any).generationStatus === GenerationStatus.GENERATED) {
+            res.json(currentLesson);
+            return;
+        }
+
+        // 2. Trigger Out-Of-Band Generation if we just acquired the lock
+        if (wasNewlyLocked) {
+            // Do NOT await this here so we can return 202 immediately
+            runContentAgent({
+                courseGoal: course.title,
+                lessonTitle: (currentLesson as any).title,
+                lessonOrder: (currentLesson as any).order,
+                userId,
+                courseId,
+                lessonId,
+            }).then(async (result) => {
+                await prisma.lesson.update({
+                    where: { id: lessonId },
+                    data: {
+                        content: result.content,
+                        generationStatus: GenerationStatus.GENERATED,
+                    },
+                });
+            }).catch(async (error) => {
+                console.error("Content Agent failed:", error);
+                await prisma.lesson.update({
+                    where: { id: lessonId },
+                    data: {
+                        generationStatus: GenerationStatus.FAILED,
+                    },
+                });
+            });
+        }
+
+        // 3. Return 202 Accepted while generation is in progress
+        res.status(202).json({
+            status: "GENERATING",
+            message: "Lesson content is currently being generated.",
+        });
+
+    } catch (error: any) {
+        if (error.message === "Lesson is locked") {
+            res.status(403).json({ error: error.message });
+            return;
+        }
+        next(error);
+    }
+}

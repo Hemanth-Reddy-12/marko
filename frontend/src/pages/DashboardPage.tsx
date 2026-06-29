@@ -7,6 +7,7 @@ import { CourseList } from "@/features/course/components/CourseList";
 import { PlannerForm } from "@/features/course/components/PlannerForm";
 import { fetchApi } from "@/lib/api";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 export function DashboardPage() {
     const { data: session } = useSession();
@@ -20,7 +21,21 @@ export function DashboardPage() {
         if (showLoading) setLoading(true);
         try {
             const data = await fetchApi<any[]>("/api/courses");
-            setCourses(data);
+            setCourses(prev => {
+                if (!showLoading) {
+                    data.forEach(newCourse => {
+                        const oldCourse = prev.find(c => c.id === newCourse.id);
+                        if (oldCourse && oldCourse.status === "GENERATING") {
+                            if (newCourse.status === "ACTIVE") {
+                                toast.success(`Course "${newCourse.title}" created successfully!`);
+                            } else if (newCourse.status === "FAILED") {
+                                toast.error(newCourse.description || "Course generation failed");
+                            }
+                        }
+                    });
+                }
+                return data;
+            });
             setError(null);
         } catch (err: any) {
             console.error("Failed to load courses:", err);
@@ -56,6 +71,16 @@ export function DashboardPage() {
         navigate(`/courses/${courseId}`);
     };
 
+    const handleDeleteCourse = async (courseId: string) => {
+        try {
+            await fetchApi(`/api/courses/${courseId}`, { method: "DELETE" });
+            setCourses(prev => prev.filter(c => c.id !== courseId));
+        } catch (err: any) {
+            console.error("Failed to delete course:", err);
+            setError("Failed to delete course. Please try again.");
+        }
+    };
+
     // Calculate metrics
     const activeCoursesCount = courses.filter(c => c.status === "ACTIVE" || c.status === "GENERATING").length;
     
@@ -79,7 +104,7 @@ export function DashboardPage() {
                         onClick={() => setIsPlannerOpen(true)}
                         className="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold px-3 py-1.5 h-8 rounded-md shadow-sm flex items-center gap-1"
                     >
-                        <Plus className="h-4 w-4" />
+                        <Plus className="size-4" />
                         <span>New Course</span>
                     </Button>
                 )}
@@ -106,8 +131,8 @@ export function DashboardPage() {
                 {/* Stat Card 1 */}
                 <Card className="bg-white border border-zinc-200/80 shadow-none rounded-lg">
                     <CardContent className="p-4 flex items-center gap-3.5">
-                        <div className="w-10 h-10 rounded-lg bg-zinc-100 flex items-center justify-center text-zinc-900 border border-zinc-200/50">
-                            <BookOpen className="h-5 w-5" />
+                        <div className="size-10 rounded-lg bg-zinc-100 flex items-center justify-center text-zinc-900 border border-zinc-200/50">
+                            <BookOpen className="size-5" />
                         </div>
                         <div>
                             <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Active Courses</p>
@@ -119,8 +144,8 @@ export function DashboardPage() {
                 {/* Stat Card 2 */}
                 <Card className="bg-white border border-zinc-200/80 shadow-none rounded-lg">
                     <CardContent className="p-4 flex items-center gap-3.5">
-                        <div className="w-10 h-10 rounded-lg bg-zinc-100 flex items-center justify-center text-zinc-900 border border-zinc-200/50">
-                            <GraduationCap className="h-5 w-5" />
+                        <div className="size-10 rounded-lg bg-zinc-100 flex items-center justify-center text-zinc-900 border border-zinc-200/50">
+                            <GraduationCap className="size-5" />
                         </div>
                         <div>
                             <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Lessons Finished</p>
@@ -132,8 +157,8 @@ export function DashboardPage() {
                 {/* Stat Card 3 */}
                 <Card className="bg-white border border-zinc-200/80 shadow-none rounded-lg">
                     <CardContent className="p-4 flex items-center gap-3.5">
-                        <div className="w-10 h-10 rounded-lg bg-zinc-100 flex items-center justify-center text-zinc-900 border border-zinc-200/50">
-                            <Trophy className="h-5 w-5" />
+                        <div className="size-10 rounded-lg bg-zinc-100 flex items-center justify-center text-zinc-900 border border-zinc-200/50">
+                            <Trophy className="size-5" />
                         </div>
                         <div>
                             <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Assessments Passed</p>
@@ -153,8 +178,8 @@ export function DashboardPage() {
             {!loading && courses.length === 0 ? (
                 <Card className="bg-zinc-50/50 border-dashed border-zinc-200 border-2 shadow-none rounded-lg">
                     <CardContent className="p-8 text-center flex flex-col items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 border border-zinc-200/50">
-                            <BookOpen className="h-5 w-5" />
+                        <div className="size-10 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 border border-zinc-200/50">
+                            <BookOpen className="size-5" />
                         </div>
                         <div className="flex flex-col gap-1.5 max-w-md mx-auto">
                             <h2 className="text-lg font-bold text-zinc-900">No active courses yet</h2>
@@ -175,6 +200,7 @@ export function DashboardPage() {
                     courses={courses} 
                     loading={loading} 
                     onViewCourse={handleViewCourse} 
+                    onDeleteCourse={handleDeleteCourse}
                 />
             )}
 

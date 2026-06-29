@@ -7,6 +7,7 @@ import { auth } from "./lib/auth.js";
 import { env } from "./config/env.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import courseRouter from "./modules/course/course.router.js";
+import lessonRouter from "./modules/lesson/lesson.router.js";
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.get("/api/health", (_, res) => {
 });
 
 app.use("/api/courses", courseRouter);
+app.use("/api/courses/:courseId/lessons", lessonRouter);
 
 // Global error handling middleware (must be last)
 app.use(errorHandler);

@@ -80,7 +80,7 @@ export function CourseDetailsPage() {
         return (
             <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto">
                 <div className="flex items-center gap-3">
-                    <Skeleton className="size-8 rounded-md" />
+                    <Skeleton className="size-10 rounded-md" />
                     <Skeleton className="h-6 w-48" />
                 </div>
                 <Skeleton className="h-32 w-full rounded-lg" />
@@ -135,14 +135,14 @@ export function CourseDetailsPage() {
                         </div>
                         <Badge
                             variant={course.status === "COMPLETED" ? "default" : course.status === "FAILED" ? "destructive" : "secondary"}
-                            className="text-[9px] font-bold tracking-wide uppercase px-2 py-0.5 rounded-full shrink-0"
+                            className="text-[10px] font-bold tracking-wide uppercase px-2.5 py-0.5 rounded-full shrink-0"
                         >
                             {course.status}
                         </Badge>
                     </div>
 
                     {/* Meta row */}
-                    <div className="flex items-center gap-4 text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
+                    <div className="flex items-center gap-4 text-xs font-medium text-zinc-400 uppercase tracking-wider">
                         <div className="flex items-center gap-1">
                             <Calendar className="size-3" />
                             <span>{course.durationDays} day plan</span>
@@ -158,7 +158,7 @@ export function CourseDetailsPage() {
 
                 <CardContent className="p-6 pt-4 flex flex-col gap-2">
                     {/* Progress */}
-                    <div className="flex items-center justify-between text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">
+                    <div className="flex items-center justify-between text-xs font-semibold text-zinc-500 uppercase tracking-wider">
                         <span>Overall Progress</span>
                         <span className="text-zinc-700 font-bold tabular-nums">
                             {completedLessons}/{totalLessons} completed ({progressPercent}%)
@@ -188,6 +188,7 @@ export function CourseDetailsPage() {
                         return (
                             <Card
                                 key={lesson.id}
+                                onClick={() => isClickable ? navigate(`/courses/${courseId}/lessons/${lesson.id}`) : undefined}
                                 className={cn(
                                     "bg-white border border-zinc-200/80 shadow-none rounded-lg transition-all duration-150",
                                     isClickable && "hover:border-zinc-300 hover:shadow-sm cursor-pointer",
@@ -197,7 +198,7 @@ export function CourseDetailsPage() {
                                 <CardContent className="p-4 flex items-center gap-4">
                                     {/* Order number */}
                                     <div className={cn(
-                                        "size-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0",
+                                        "size-10 rounded-lg flex items-center justify-center text-sm font-bold shrink-0",
                                         config.bg, config.color,
                                     )}>
                                         {lesson.order}
@@ -218,7 +219,7 @@ export function CourseDetailsPage() {
                                     {isClickable && (
                                         <Badge
                                             variant="secondary"
-                                            className="text-[9px] font-bold tracking-wide uppercase px-2 py-0.5 rounded-full shrink-0"
+                                            className="text-[10px] font-bold tracking-wide uppercase px-2.5 py-0.5 rounded-full shrink-0"
                                         >
                                             {lesson.status === "COMPLETED" ? "Review" : "Start"}
                                         </Badge>

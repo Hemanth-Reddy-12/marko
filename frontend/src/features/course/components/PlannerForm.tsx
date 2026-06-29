@@ -108,17 +108,12 @@ export function PlannerForm({ isOpen, onClose, onCourseCreated }: PlannerFormPro
                                 <Input
                                     id="duration"
                                     type="number"
-                                    min={1}
-                                    max={30}
                                     value={durationDays}
                                     onChange={(e) => setDurationDays(Number(e.target.value))}
                                     disabled={loading}
                                     required
                                     className="w-24 bg-zinc-50/50 border-zinc-200/80 focus-visible:ring-zinc-900 focus-visible:border-zinc-900 text-xs font-semibold"
                                 />
-                                <span className="text-xs text-zinc-500 font-normal">
-                                    Recommended: 5-10 days for focused mastery. Max 30 days.
-                                </span>
                             </div>
                         </Field>
                     </FieldGroup>

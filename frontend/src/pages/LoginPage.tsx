@@ -101,7 +101,7 @@ export function LoginPage() {
                             transition={{ type: "spring", stiffness: 300 }}
                             className={loadingProvider === "google" ? "animate-pulse cursor-not-allowed" : "cursor-pointer"}
                         >
-                            <GoogleIcon className="h-12 w-12" skeleton={loadingProvider === "google"} />
+                            <GoogleIcon className="size-12" skeleton={loadingProvider === "google"} />
                             <span className="text-sm font-medium text-foreground transition-colors duration-300">
                                 Google
                             </span>
@@ -115,7 +115,7 @@ export function LoginPage() {
                             transition={{ type: "spring", stiffness: 300 }}
                             className={loadingProvider === "github" ? "animate-pulse cursor-not-allowed" : "cursor-pointer"}
                         >
-                            <GithubIcon className="h-12 w-12 fill-foreground transition-colors duration-300" skeleton={loadingProvider === "github"} />
+                            <GithubIcon className="size-12 fill-foreground transition-colors duration-300" skeleton={loadingProvider === "github"} />
                             <span className="text-sm font-medium text-foreground transition-colors duration-300 group-hover:text-foreground">
                                 GitHub
                             </span>

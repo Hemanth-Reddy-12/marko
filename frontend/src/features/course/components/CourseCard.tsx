@@ -2,8 +2,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { BookOpen, Calendar, ChevronRight, Loader2, AlertCircle } from "lucide-react";
+import { BookOpen, Calendar, ChevronRight, Loader2, AlertCircle, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export interface Lesson {
     id: string;
@@ -25,9 +26,10 @@ export interface Course {
 interface CourseCardProps {
     course: Course;
     onViewCourse: (courseId: string) => void;
+    onDeleteCourse?: (courseId: string) => void;
 }
 
-export function CourseCard({ course, onViewCourse }: CourseCardProps) {
+export function CourseCard({ course, onViewCourse, onDeleteCourse }: CourseCardProps) {
     const isGenerating = course.status === "GENERATING";
     const isFailed = course.status === "FAILED";
 
@@ -57,12 +59,50 @@ export function CourseCard({ course, onViewCourse }: CourseCardProps) {
                         <Calendar className="size-3" />
                         <span>{course.durationDays} Days</span>
                     </div>
-                    <Badge 
-                        variant={isFailed ? "destructive" : course.status === "COMPLETED" ? "default" : "secondary"}
-                        className="text-[9px] font-bold tracking-wide uppercase px-2 py-0.5 rounded-full"
-                    >
-                        {course.status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                        <Badge 
+                            variant={isFailed ? "destructive" : course.status === "COMPLETED" ? "default" : "secondary"}
+                            className="text-[9px] font-bold tracking-wide uppercase px-2 py-0.5 rounded-full"
+                        >
+                            {course.status}
+                        </Badge>
+                        {onDeleteCourse && (
+                            <AlertDialog>
+                                <AlertDialogTrigger 
+                                    render={
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="size-6 text-zinc-400 hover:text-red-500 hover:bg-red-50"
+                                            onClick={(e) => e.stopPropagation()}
+                                        />
+                                    }
+                                >
+                                    <Trash2 className="size-3.5" />
+                                </AlertDialogTrigger>
+                                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete Course</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Are you sure you want to delete this course? This action cannot be undone and will permanently remove all lessons and progress.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onDeleteCourse(course.id);
+                                            }}
+                                            className="bg-red-600 hover:bg-red-700 text-white"
+                                        >
+                                            Delete
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
+                    </div>
                 </div>
 
                 {/* Title & Description */}

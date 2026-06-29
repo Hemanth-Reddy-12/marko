@@ -7,9 +7,10 @@ interface CourseListProps {
     courses: Course[];
     loading: boolean;
     onViewCourse: (courseId: string) => void;
+    onDeleteCourse?: (courseId: string) => void;
 }
 
-export function CourseList({ courses, loading, onViewCourse }: CourseListProps) {
+export function CourseList({ courses, loading, onViewCourse, onDeleteCourse }: CourseListProps) {
     if (loading) {
         return (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -46,6 +47,7 @@ export function CourseList({ courses, loading, onViewCourse }: CourseListProps) 
                     key={course.id} 
                     course={course} 
                     onViewCourse={onViewCourse} 
+                    onDeleteCourse={onDeleteCourse}
                 />
             ))}
         </div>
