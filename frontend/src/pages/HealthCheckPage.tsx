@@ -62,10 +62,10 @@ export function HealthCheckPage() {
                         Real-time health check of core services
                     </CardDescription>
                 </CardHeader>
-                
-                <CardContent className="space-y-5 pt-4">
+
+                <CardContent className="flex flex-col gap-5 pt-4">
                     {/* Status Indicators */}
-                    <div className="space-y-3">
+                    <div className="flex flex-col gap-3">
                         <div className="flex items-center justify-between p-4 rounded-lg bg-zinc-50 border border-zinc-200/40">
                             <div className="flex items-center gap-3">
                                 <Server className="w-4 h-4 text-zinc-500" />
@@ -74,9 +74,9 @@ export function HealthCheckPage() {
                             {loading && !health && !error ? (
                                 <div className="w-16 h-6 bg-zinc-200 rounded animate-pulse" />
                             ) : (
-                                <StatusBadge 
-                                    isOk={health?.status === "ok" && !error} 
-                                    label={error ? "Offline" : "Online"} 
+                                <StatusBadge
+                                    isOk={health?.status === "ok" && !error}
+                                    label={error ? "Offline" : "Online"}
                                 />
                             )}
                         </div>
@@ -89,9 +89,9 @@ export function HealthCheckPage() {
                             {loading && !health && !error ? (
                                 <div className="w-16 h-6 bg-zinc-200 rounded animate-pulse" />
                             ) : (
-                                <StatusBadge 
-                                    isOk={health?.db === true && !error} 
-                                    label={error || !health?.db ? "Offline" : "Connected"} 
+                                <StatusBadge
+                                    isOk={health?.db === true && !error}
+                                    label={error || !health?.db ? "Offline" : "Connected"}
                                 />
                             )}
                         </div>
@@ -99,15 +99,15 @@ export function HealthCheckPage() {
 
                     {/* Actions and Meta */}
                     <div className="pt-2 flex flex-col gap-3">
-                        <Button 
-                            onClick={checkHealth} 
+                        <Button
+                            onClick={checkHealth}
                             disabled={loading}
                             className="w-full h-10 font-semibold text-xs shadow-sm bg-zinc-900 hover:bg-zinc-800 text-white rounded-md flex items-center justify-center gap-2"
                         >
                             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
                             {loading ? "Checking..." : "Refresh Status"}
                         </Button>
-                        
+
                         {lastChecked && (
                             <p className="text-[10px] text-center text-zinc-400 font-medium">
                                 Last checked: {lastChecked.toLocaleTimeString()}

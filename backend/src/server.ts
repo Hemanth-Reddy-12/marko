@@ -6,12 +6,21 @@ import { auth } from "./lib/auth.js";
 
 import { env } from "./config/env.js";
 import { errorHandler } from "./middleware/error-handler.js";
+import courseRouter from "./modules/course/course.router.js";
 
 const app = express();
 
+const allowedOrigins = [env.FRONTEND_URL, "http://localhost:5173", "http://localhost:5174"];
+
 app.use(
     cors({
-        origin: env.FRONTEND_URL,
+        origin: (origin, callback) => {
+            if (!origin || allowedOrigins.includes(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error("Not allowed by CORS"));
+            }
+        },
         credentials: true,
     }),
 );
@@ -27,6 +36,8 @@ app.get("/", (_, res) => {
 app.get("/api/health", (_, res) => {
     res.json({ status: "ok", db: true });
 });
+
+app.use("/api/courses", courseRouter);
 
 // Global error handling middleware (must be last)
 app.use(errorHandler);

@@ -55,9 +55,6 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
                             </div>
                             <div className="grid flex-1 text-left text-sm leading-tight">
                                 <span className="truncate font-semibold">Marko</span>
-                                <span className="truncate text-xs text-muted-foreground">
-                                    Learning Platform
-                                </span>
                             </div>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -67,7 +64,6 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
             {/* Navigation */}
             <SidebarContent>
                 <SidebarGroup>
-                    <SidebarGroupLabel>Navigate</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
                             {navItems.map((item) => {

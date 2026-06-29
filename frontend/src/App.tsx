@@ -3,6 +3,8 @@ import { AppShell } from "@/components/layout/AppShell";
 import { LoginPage } from "@/pages/LoginPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { HealthCheckPage } from "@/pages/HealthCheckPage";
+import { CourseDetailsPage } from "@/pages/CourseDetailsPage";
+import { CoursesPage } from "@/pages/CoursesPage";
 
 const App = () => {
     return (
@@ -14,7 +16,8 @@ const App = () => {
                 {/* Protected Routes */}
                 <Route element={<AppShell />}>
                     <Route path="/dashboard" element={<DashboardPage />} />
-                    <Route path="/courses" element={<DashboardPage />} /> {/* Placeholder */}
+                    <Route path="/courses" element={<CoursesPage />} />
+                    <Route path="/courses/:courseId" element={<CourseDetailsPage />} />
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 </Route>
             </Routes>
