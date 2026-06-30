@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, CheckCircle2, Lock, Circle, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 interface CourseHeader {
     id: string;
@@ -20,8 +21,8 @@ interface CourseHeader {
 }
 
 const statusConfig = {
-    LOCKED: { icon: Lock, color: "text-zinc-400" },
-    AVAILABLE: { icon: Circle, color: "text-blue-500" },
+    LOCKED: { icon: Lock, color: "text-muted-foreground/40" },
+    AVAILABLE: { icon: Circle, color: "text-accent" },
     IN_PROGRESS: { icon: Play, color: "text-amber-500" },
     COMPLETED: { icon: CheckCircle2, color: "text-emerald-500" },
 } as const;
@@ -34,10 +35,8 @@ export function LessonPage() {
 
     React.useEffect(() => {
         if (!courseId) return;
-
         const loadCourseInfo = async () => {
             try {
-                // Fetch course info to render the sidebar list
                 const data = await fetchApi<CourseHeader>(`/api/courses/${courseId}`);
                 setCourse(data);
             } catch (err) {
@@ -46,73 +45,75 @@ export function LessonPage() {
                 setLoading(false);
             }
         };
-
         loadCourseInfo();
     }, [courseId]);
 
     if (!courseId || !lessonId) {
-        return <div className="p-8 text-center text-red-500">Invalid URL parameters</div>;
+        return <div className="p-8 text-center text-destructive text-sm">Invalid URL parameters</div>;
     }
 
     return (
-        <div className="flex flex-1 h-[calc(100vh-4rem)] overflow-hidden bg-white border border-zinc-200/80 shadow-none rounded-xl">
-            {/* Sidebar / Curriculum List */}
-            <div className="w-80 border-r border-zinc-200/80 bg-zinc-50/50 flex flex-col shrink-0 hidden md:flex">
-                <div className="p-4 flex items-center gap-3">
+        <div className="flex flex-1 h-[calc(100vh-3.5rem)] overflow-hidden bg-card border border-border shadow-none rounded-2xl">
+            {/* Sidebar — Curriculum List */}
+            <div className="w-72 border-r border-border bg-muted/20 flex flex-col shrink-0 hidden md:flex">
+                {/* Sidebar header */}
+                <div className="p-3 flex items-center gap-2.5 border-b border-border">
                     <button
                         onClick={() => navigate(`/courses/${courseId}`)}
-                        className="size-11 rounded-full flex items-center justify-center hover:bg-zinc-200 transition-colors"
+                        className="size-9 rounded-xl flex items-center justify-center hover:bg-muted transition-colors cursor-pointer shrink-0"
                     >
-                        <ArrowLeft className="size-5 text-zinc-600" />
+                        <ArrowLeft className="size-4 text-muted-foreground" />
                     </button>
                     <div className="min-w-0 flex-1">
-                        <div className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
-                            Course Curriculum
+                        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                            Curriculum
                         </div>
                         {loading ? (
-                            <Skeleton className="h-4 w-32 mt-1" />
+                            <Skeleton className="h-3.5 w-28 mt-1" />
                         ) : (
-                            <div className="text-sm font-semibold text-zinc-900 truncate">
+                            <div className="text-xs font-semibold text-foreground truncate">
                                 {course?.title}
                             </div>
                         )}
                     </div>
                 </div>
 
-                <Separator />
-
                 <ScrollArea className="flex-1">
-                    <div className="p-4 flex flex-col gap-1">
-                        {loading ? (
-                            Array.from({ length: 5 }).map((_, i) => (
-                                <Skeleton key={i} className="h-12 w-full rounded-md" />
+                    <div className="p-2 flex flex-col gap-0.5">
+                        {loading
+                            ? Array.from({ length: 5 }).map((_, i) => (
+                                <Skeleton key={i} className="h-11 w-full rounded-xl" />
                             ))
-                        ) : (
-                            course?.lessons.map((lesson) => {
+                            : course?.lessons.map((lesson, i) => {
                                 const isActive = lesson.id === lessonId;
                                 const isClickable = lesson.status !== "LOCKED";
                                 const StatusIcon = statusConfig[lesson.status].icon;
 
                                 const content = (
-                                    <div
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -8 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ duration: 0.25, delay: i * 0.04, ease: [0.16, 1, 0.3, 1] }}
                                         className={cn(
-                                            "flex items-center gap-3 p-3 rounded-lg text-sm transition-all",
-                                            isActive ? "bg-zinc-900 text-white" : "hover:bg-zinc-100",
-                                            !isClickable && "opacity-50 cursor-not-allowed hover:bg-transparent"
+                                            "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs transition-all duration-200",
+                                            isActive
+                                                ? "bg-accent text-white shadow-sm"
+                                                : "hover:bg-muted/60 text-foreground",
+                                            !isClickable && "opacity-40 cursor-not-allowed hover:bg-transparent"
                                         )}
                                     >
                                         <StatusIcon
                                             className={cn(
-                                                "size-4 shrink-0",
+                                                "size-3.5 shrink-0",
                                                 isActive ? "text-white" : statusConfig[lesson.status].color
                                             )}
                                         />
                                         <div className="flex flex-col min-w-0 flex-1">
-                                            <span className="truncate font-medium">
+                                            <span className="truncate font-medium leading-tight">
                                                 {lesson.order}. {lesson.title}
                                             </span>
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 );
 
                                 if (isClickable) {
@@ -125,23 +126,23 @@ export function LessonPage() {
 
                                 return <div key={lesson.id}>{content}</div>;
                             })
-                        )}
+                        }
                     </div>
                 </ScrollArea>
             </div>
 
-            {/* Main Content Viewer */}
-            <div className="flex-1 flex flex-col h-full bg-white relative">
-                {/* Mobile Back Button */}
-                <div className="md:hidden border-b border-zinc-200/80 p-3 flex items-center gap-3">
+            {/* Main Content */}
+            <div className="flex-1 flex flex-col h-full bg-card relative min-w-0">
+                {/* Mobile back button */}
+                <div className="md:hidden border-b border-border p-3 flex items-center gap-3">
                     <button
                         onClick={() => navigate(`/courses/${courseId}`)}
-                        className="size-11 rounded-full flex items-center justify-center hover:bg-zinc-100"
+                        className="size-9 rounded-xl flex items-center justify-center hover:bg-muted transition-colors cursor-pointer"
                     >
-                        <ArrowLeft className="size-5 text-zinc-600" />
+                        <ArrowLeft className="size-4 text-muted-foreground" />
                     </button>
-                    <span className="text-sm font-semibold truncate flex-1">
-                        {course?.title || "Loading..."}
+                    <span className="text-sm font-semibold truncate flex-1 text-foreground">
+                        {course?.title || "Loading…"}
                     </span>
                 </div>
 
