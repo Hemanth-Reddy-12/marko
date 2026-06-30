@@ -100,12 +100,16 @@ export async function setupChatGateway(httpServer: HTTPServer) {
                         failReason: aiResponse.failReason ?? null,
                     };
 
+                    // Prisma interprets plain objects on Json fields as nested relation
+                    // operations. Serialising through JSON ensures it's treated as raw value.
+                    const feedbackJson = JSON.parse(JSON.stringify(feedbackData));
+
                     await prisma.interview.update({
                         where: { id: interview.id },
                         data: {
                             score: aiResponse.score ?? null,
                             passed: aiResponse.passed ?? null,
-                            feedback: feedbackData,
+                            feedback: feedbackJson,
                         }
                     });
                     io.to(sessionId).emit("interview_complete", {
