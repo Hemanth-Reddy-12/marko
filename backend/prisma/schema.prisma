@@ -182,7 +182,7 @@ model Interview {
   transcript Json?
   score      Float?
   passed     Boolean?
-  feedback   String?  @db.Text
+  feedback   Json?
   courseId   String   @unique
   course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   userId     String

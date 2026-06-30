@@ -14,9 +14,7 @@ const envSchema = z.object({
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
     REDIS_URL: z.string().default("redis://localhost:6379"),
-    AI_PROVIDER: z
-        .enum(["openai", "gemini", "mock"])
-        .default("openai"),
+    AI_PROVIDER: z.enum(["openai", "gemini", "mock"]).default("openai"),
     OPENAI_API_KEY: z.string().optional(),
     OPENAI_MODEL: z.string().default("gpt-4o-mini"),
     OPENAI_BASE_URL: z.string().optional(),

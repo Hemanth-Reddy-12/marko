@@ -228,6 +228,43 @@ export function CourseDetailsPage() {
                             </Card>
                         );
                     })}
+
+                    {/* Capstone Interview Card */}
+                    {totalLessons > 0 && (
+                        <Card
+                            onClick={() => progressPercent === 100 ? navigate(`/courses/${courseId}/interview`) : undefined}
+                            className={cn(
+                                "bg-white border border-zinc-200/80 shadow-none rounded-lg transition-all duration-150 mt-2",
+                                progressPercent === 100 ? "hover:border-zinc-300 hover:shadow-sm cursor-pointer ring-1 ring-emerald-500" : "opacity-60",
+                            )}
+                        >
+                            <CardContent className="p-4 flex items-center gap-4">
+                                <div className={cn(
+                                    "size-10 rounded-lg flex items-center justify-center text-sm font-bold shrink-0",
+                                    progressPercent === 100 ? "bg-emerald-100 text-emerald-600" : "bg-zinc-100 text-zinc-400"
+                                )}>
+                                    ★
+                                </div>
+                                <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                                    <span className="text-sm font-semibold text-zinc-900 truncate">
+                                        Capstone Interview
+                                    </span>
+                                    <span className={cn("text-[10px] font-medium uppercase tracking-wider flex items-center gap-1", progressPercent === 100 ? "text-emerald-500" : "text-zinc-400")}>
+                                        {progressPercent === 100 ? <Play className="size-3" /> : <Lock className="size-3" />}
+                                        {progressPercent === 100 ? "Available" : "Locked"}
+                                    </span>
+                                </div>
+                                {progressPercent === 100 && (
+                                    <Badge
+                                        variant="secondary"
+                                        className="text-[10px] font-bold tracking-wide uppercase px-2.5 py-0.5 rounded-full shrink-0 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-none"
+                                    >
+                                        Start Exam
+                                    </Badge>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             </div>
         </div>

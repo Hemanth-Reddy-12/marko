@@ -60,9 +60,9 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
         }
     }, [answers, quiz, onProgressChange]);
 
-    const handleSelect = (questionId: string, index: number) => {
+    const handleSelect = (uniqueQId: string, index: number) => {
         if (result) return; // disable changing answers after submission
-        setAnswers(prev => ({ ...prev, [questionId]: index }));
+        setAnswers(prev => ({ ...prev, [uniqueQId]: index }));
     };
 
     const handleSubmit = async () => {
@@ -74,7 +74,7 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
             return;
         }
 
-        const answerArray = quiz.questions.map(q => answers[q.id]);
+        const answerArray = quiz.questions.map((q, qIndex) => answers[`${q.id}-${qIndex}`]);
         
         setSubmitting(true);
         try {
@@ -138,17 +138,19 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
             
             <div className="space-y-12">
                 {questionsToDisplay.map((q, qIndex) => {
-                    const selectedIdx = answers[q.id];
+                    const uniqueQId = `${q.id}-${qIndex}`;
+                    const selectedIdx = answers[uniqueQId];
                     const correctIdx = q.correctAnswerIndex;
                     const isCorrect = selectedIdx === correctIdx;
 
                     return (
-                        <div key={q.id} className="bg-white border border-zinc-200/80 rounded-xl p-6 shadow-sm">
+                        <div key={uniqueQId} className="bg-white border border-zinc-200/80 rounded-xl p-6 shadow-sm">
                             <h3 className="text-lg font-semibold text-zinc-900 mb-4">{qIndex + 1}. {q.text}</h3>
                             
                             <RadioGroup 
+                                name={uniqueQId}
                                 value={selectedIdx !== undefined ? selectedIdx.toString() : ""} 
-                                onValueChange={(val) => handleSelect(q.id, parseInt(val))}
+                                onValueChange={(val) => handleSelect(uniqueQId, parseInt(val))}
                                 className="space-y-3"
                                 disabled={isCompleted}
                             >
@@ -178,7 +180,7 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
                                                 itemStateClass
                                             )}
                                         >
-                                            <RadioGroupItem value={optIdx.toString()} id={`${q.id}-${optIdx}`} className="sr-only" />
+                                            <RadioGroupItem value={optIdx.toString()} id={`${uniqueQId}-${optIdx}`} className="sr-only" />
                                             
                                             {/* Custom Radio Circle indicator */}
                                             {!isCompleted && (

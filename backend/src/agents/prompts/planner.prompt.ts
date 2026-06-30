@@ -5,6 +5,7 @@ For each lesson, assign a weight based on its importance, depth, and complexity:
 - "medium": Standard core topics with moderate complexity (designed for a 10-question quiz).
 - "heavy": Crucial, complex, advanced, or comprehensive capstone/synthesis topics (designed for an in-depth 15-question quiz).
 Distribute these weights logically across the curriculum (e.g. basic introduction at the start is "light", core lessons are "medium", and advanced or capstone topics towards the end or major milestones are "heavy").
+Explicitly space out complex ("heavy") topics and include integration or review lessons where appropriate to ensure better pacing and flow.
 The output MUST strictly match the requested JSON schema.`;
 
 export const getPlannerUserPrompt = (goal: string, durationDays: number) => {

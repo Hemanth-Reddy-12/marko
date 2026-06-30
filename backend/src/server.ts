@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import http from "http";
 import cors from "cors";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth.js";
@@ -8,8 +9,12 @@ import { env } from "./config/env.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import courseRouter from "./modules/course/course.router.js";
 import lessonRouter from "./modules/lesson/lesson.router.js";
+import chatRouter from "./modules/chat/chat.router.js";
+import { setupChatGateway } from "./modules/chat/chat.gateway.js";
 
 const app = express();
+const httpServer = http.createServer(app);
+setupChatGateway(httpServer);
 
 const allowedOrigins = [env.FRONTEND_URL, "http://localhost:5173", "http://localhost:5174"];
 
@@ -40,11 +45,12 @@ app.get("/api/health", (_, res) => {
 
 app.use("/api/courses", courseRouter);
 app.use("/api/courses/:courseId/lessons", lessonRouter);
+app.use("/api/interviews", chatRouter);
 
 // Global error handling middleware (must be last)
 app.use(errorHandler);
 
 const PORT = Number.parseInt(env.PORT, 10);
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
