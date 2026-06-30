@@ -48,6 +48,7 @@ export async function createCourse(
                     const lessonsData = planned.lessons.map((lesson) => ({
                         title: lesson.title,
                         order: lesson.order,
+                        weight: lesson.weight || "medium",
                         status: lesson.order === 1 ? LessonStatus.AVAILABLE : LessonStatus.LOCKED,
                         generationStatus: GenerationStatus.NOT_GENERATED,
                         courseId: course.id,

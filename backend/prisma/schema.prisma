@@ -139,6 +139,7 @@ model Lesson {
   status           LessonStatus
   generationStatus GenerationStatus
   content          String?          @db.Text
+  weight           String           @default("medium")
   courseId         String
   course           Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
   quizzes          Quiz[]

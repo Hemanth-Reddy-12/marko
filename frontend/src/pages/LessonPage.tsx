@@ -5,7 +5,7 @@ import { LessonViewer } from "@/features/lesson/components/LessonViewer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, CheckCircle2, Lock, Circle, Play, AlertCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Lock, Circle, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CourseHeader {
@@ -146,21 +146,12 @@ export function LessonPage() {
                 </div>
 
                 <ScrollArea className="flex-1">
-                    {(() => {
-                        const currentLessonIndex = course?.lessons.findIndex(l => l.id === lessonId) ?? -1;
-                        const nextLesson = course && currentLessonIndex !== -1 && currentLessonIndex < course.lessons.length - 1
-                            ? course.lessons[currentLessonIndex + 1]
-                            : null;
-
-                        return (
-                            <LessonViewer
-                                courseId={courseId}
-                                lessonId={lessonId}
-                                key={lessonId}
-                                onNext={() => navigate(`/courses/${courseId}/lessons/${lessonId}/quiz`)}
-                            />
-                        );
-                    })()}
+                    <LessonViewer
+                        courseId={courseId}
+                        lessonId={lessonId}
+                        key={lessonId}
+                        onNext={() => navigate(`/courses/${courseId}/lessons/${lessonId}/quiz`)}
+                    />
                 </ScrollArea>
             </div>
         </div>

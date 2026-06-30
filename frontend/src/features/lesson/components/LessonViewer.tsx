@@ -5,11 +5,10 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
 import "katex/dist/katex.min.css";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { codeToHtml } from "shiki";
 import { TextReveal } from "@/components/animated/TextReveal";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fetchLesson, pollLesson } from "../api/lesson.api";
+import { pollLesson } from "../api/lesson.api";
 import type { LessonResponse } from "../types";
 import { AlertCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,6 +18,43 @@ interface LessonViewerProps {
     lessonId: string;
     onNext?: (id: string) => void;
 }
+
+const CodeHighlight = ({ className, children, node, ...props }: any) => {
+    const match = /language-(\w+)/.exec(className || '');
+    const language = match ? match[1] : 'text';
+    const [html, setHtml] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        let mounted = true;
+        if (match) {
+            codeToHtml(String(children).replace(/\n$/, ''), {
+                lang: language,
+                theme: 'dark-plus'
+            }).then(res => {
+                if (mounted) setHtml(res);
+            }).catch(() => {
+                if (mounted) setHtml(null);
+            });
+        }
+        return () => { mounted = false; };
+    }, [children, language, match]);
+
+    if (!match) {
+        return <code className={className} {...props}>{children}</code>;
+    }
+
+    if (html) {
+        return <div dangerouslySetInnerHTML={{ __html: html }} className="shiki-container" />;
+    }
+
+    return (
+        <div className="animate-pulse bg-zinc-900 rounded-md p-4 mb-4">
+            <div className="h-4 bg-zinc-800 rounded w-1/4 mb-2"></div>
+            <div className="h-4 bg-zinc-800 rounded w-1/2 mb-2"></div>
+            <div className="h-4 bg-zinc-800 rounded w-3/4"></div>
+        </div>
+    );
+};
 
 export function LessonViewer({ courseId, lessonId, onNext }: LessonViewerProps) {
     const [lesson, setLesson] = React.useState<LessonResponse | null>(null);
@@ -41,7 +77,7 @@ export function LessonViewer({ courseId, lessonId, onNext }: LessonViewerProps) 
 
                 if (res.status === 202) {
                     setStatusText("Generating your personalized lesson. This may take a moment...");
-                    const polled = await pollLesson(courseId, lessonId, (s) => setStatusText("Still generating... please wait"));
+                    const polled = await pollLesson(courseId, lessonId, () => setStatusText("Still generating... please wait"));
                     if (mounted) {
                         setLesson(polled);
                     }
@@ -123,33 +159,15 @@ export function LessonViewer({ courseId, lessonId, onNext }: LessonViewerProps) 
             <div className="prose prose-zinc prose-sm sm:prose-base max-w-none 
                 prose-headings:font-bold prose-h1:text-3xl prose-h1:tracking-tight prose-h2:text-2xl prose-h2:tracking-tight 
                 prose-h3:text-xl prose-p:leading-relaxed prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline
-                prose-pre:bg-zinc-900 prose-pre:text-zinc-50 prose-pre:border prose-pre:border-zinc-800 prose-pre:shadow-sm
-                prose-code:text-rose-500 prose-code:bg-rose-50/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none
+                prose-pre:text-zinc-50 prose-pre:border prose-pre:border-zinc-800
+                prose-code:text-rose-500 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none
                 prose-img:rounded-xl prose-img:border prose-img:border-zinc-200/50
                 prose-blockquote:border-l-4 prose-blockquote:border-zinc-300 prose-blockquote:bg-zinc-50 prose-blockquote:py-2 prose-blockquote:pr-4 prose-blockquote:pl-5 prose-blockquote:not-italic prose-blockquote:text-zinc-700
             ">
                 <ReactMarkdown
                     remarkPlugins={[remarkGfm, remarkMath]}
                     rehypePlugins={[rehypeRaw, rehypeKatex]}
-                    components={{
-                        code(props) {
-                            const { children, className, node, ref, ...rest } = props;
-                            const match = /language-(\w+)/.exec(className || '');
-                            return match ? (
-                                <SyntaxHighlighter
-                                    {...rest}
-                                    PreTag="div"
-                                    children={String(children).replace(/\n$/, '')}
-                                    language={match[1]}
-                                    style={vscDarkPlus}
-                                />
-                            ) : (
-                                <code {...rest} ref={ref} className={className}>
-                                    {children}
-                                </code>
-                            );
-                        }
-                    }}
+                    components={{ code: CodeHighlight }}
                 >
                     {lesson.content}
                 </ReactMarkdown>

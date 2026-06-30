@@ -9,7 +9,7 @@ import type { Question } from "./quiz.types.js";
 export async function getQuiz(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
 ): Promise<void> {
     try {
         const userId = (req as any).user?.id;
@@ -45,7 +45,9 @@ export async function getQuiz(
         }
 
         if (!lesson.content) {
-            res.status(400).json({ error: "Lesson content must be generated before taking a quiz." });
+            res.status(400).json({
+                error: "Lesson content must be generated before taking a quiz.",
+            });
             return;
         }
 
@@ -55,7 +57,7 @@ export async function getQuiz(
         await prisma.$transaction(async (tx) => {
             let quiz = await tx.quiz.findFirst({
                 where: { lessonId },
-                orderBy: { version: 'desc' },
+                orderBy: { version: "desc" },
             });
 
             if (!quiz) {
@@ -68,7 +70,10 @@ export async function getQuiz(
                 });
             }
 
-            if (quiz.status === QuizStatus.NOT_GENERATED || quiz.status === QuizStatus.FAILED) {
+            if (
+                quiz.status === QuizStatus.NOT_GENERATED ||
+                quiz.status === QuizStatus.FAILED
+            ) {
                 currentQuiz = await tx.quiz.update({
                     where: { id: quiz.id },
                     data: { status: QuizStatus.GENERATING },
@@ -87,7 +92,7 @@ export async function getQuiz(
         if ((currentQuiz as any).status === QuizStatus.GENERATED) {
             const questions = (currentQuiz as any).questions as Question[];
             // Strip answers and rationales
-            const sanitizedQuestions = questions.map(q => ({
+            const sanitizedQuestions = questions.map((q) => ({
                 id: q.id,
                 text: q.text,
                 options: q.options,
@@ -103,36 +108,45 @@ export async function getQuiz(
         }
 
         if (wasNewlyLocked) {
+            let limit = 10;
+            if (lesson.weight === "light") {
+                limit = 4;
+            } else if (lesson.weight === "heavy") {
+                limit = 15;
+            }
+
             runQuizAgent({
                 lessonTitle: lesson.title,
                 lessonContent: lesson.content,
                 userId,
                 lessonId,
                 quizId: (currentQuiz as any).id,
-            }).then(async (result) => {
-                await prisma.quiz.update({
-                    where: { id: (currentQuiz as any).id },
-                    data: {
-                        questions: result.questions as any,
-                        status: QuizStatus.GENERATED,
-                    },
+                limit,
+            })
+                .then(async (result) => {
+                    await prisma.quiz.update({
+                        where: { id: (currentQuiz as any).id },
+                        data: {
+                            questions: result.questions as any,
+                            status: QuizStatus.GENERATED,
+                        },
+                    });
+                })
+                .catch(async (error) => {
+                    console.error("Quiz Agent failed:", error);
+                    await prisma.quiz.update({
+                        where: { id: (currentQuiz as any).id },
+                        data: {
+                            status: QuizStatus.FAILED,
+                        },
+                    });
                 });
-            }).catch(async (error) => {
-                console.error("Quiz Agent failed:", error);
-                await prisma.quiz.update({
-                    where: { id: (currentQuiz as any).id },
-                    data: {
-                        status: QuizStatus.FAILED,
-                    },
-                });
-            });
         }
 
         res.status(202).json({
             status: "GENERATING",
             message: "Quiz is currently being generated.",
         });
-
     } catch (error) {
         next(error);
     }
@@ -141,7 +155,7 @@ export async function getQuiz(
 export async function attemptQuiz(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
 ): Promise<void> {
     try {
         const userId = (req as any).user?.id;
@@ -176,7 +190,7 @@ export async function attemptQuiz(
 
         const quiz = await prisma.quiz.findFirst({
             where: { lessonId },
-            orderBy: { version: 'desc' },
+            orderBy: { version: "desc" },
         });
 
         if (!quiz || quiz.status !== QuizStatus.GENERATED) {
@@ -187,7 +201,9 @@ export async function attemptQuiz(
         const questions = quiz.questions as unknown as Question[];
 
         if (answers.length !== questions.length) {
-            res.status(400).json({ error: "Answers length does not match questions length" });
+            res.status(400).json({
+                error: "Answers length does not match questions length",
+            });
             return;
         }
 
@@ -220,7 +236,10 @@ export async function attemptQuiz(
                 });
 
                 const nextLesson = await tx.lesson.findFirst({
-                    where: { courseId: lesson.courseId, order: lesson.order + 1 },
+                    where: {
+                        courseId: lesson.courseId,
+                        order: lesson.order + 1,
+                    },
                 });
 
                 if (nextLesson && nextLesson.status === LessonStatus.LOCKED) {
@@ -245,7 +264,7 @@ export async function attemptQuiz(
             quiz: {
                 ...quiz,
                 questions: questions, // Full questions with rationale
-            }
+            },
         });
     } catch (error) {
         next(error);

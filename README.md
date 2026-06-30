@@ -2,7 +2,7 @@
 
 ---
 
-##  1. Project Definition (What You Are Developing)
+## 1. Project Definition (What You Are Developing)
 
 Project Marko is an autonomous, event-driven learning platform that transforms a user's high-level learning goal into a fully interactive, custom-generated educational curriculum. Instead of serving static, pre-recorded content, the system acts as a live educational architect and evaluator.
 
@@ -38,17 +38,17 @@ The platform uses a decoupled, stateful architecture designed to handle asynchro
 
 ### Backend Architecture Components
 
-* **Express 5 Application Server:** Manages standard REST HTTP lifecycles, body parsing, route authentication middleware, and execution guardrails.
-* **Socket.io Gateway + Redis Adapter:** Establishes a persistent, stateful, bidirectional transport layer for the real-time chat interface. The `@socket.io/redis-adapter` binds the WebSocket layer to a Redis Pub/Sub instance, enabling multi-instance horizontal scaling and state synchronization.
-* **AI Provider Engine (Factory Pattern):** A unified interface abstraction that routes incoming inference calls to either the `openai` SDK or the `@google/generative-ai` SDK. It mandates the use of **Native Structured Outputs** at the provider level, ensuring all LLM responses rigidly conform to the system's strict database types.
-* **AgentRun Lifecycle Manager:** An isolated telemetry wrapper that intercepts every outbound AI request. It records execution metrics, inputs, outputs, timestamps, prompt versions, and errors to provide complete visibility into model behavior.
-* **Prisma 7 ORM & PostgreSQL Database:** The data layer utilizing transactional guarantees to execute multi-row changes, blocking out race conditions during lazy content generation steps.
+- **Express 5 Application Server:** Manages standard REST HTTP lifecycles, body parsing, route authentication middleware, and execution guardrails.
+- **Socket.io Gateway + Redis Adapter:** Establishes a persistent, stateful, bidirectional transport layer for the real-time chat interface. The `@socket.io/redis-adapter` binds the WebSocket layer to a Redis Pub/Sub instance, enabling multi-instance horizontal scaling and state synchronization.
+- **AI Provider Engine (Factory Pattern):** A unified interface abstraction that routes incoming inference calls to either the `openai` SDK or the `@google/generative-ai` SDK. It mandates the use of **Native Structured Outputs** at the provider level, ensuring all LLM responses rigidly conform to the system's strict database types.
+- **AgentRun Lifecycle Manager:** An isolated telemetry wrapper that intercepts every outbound AI request. It records execution metrics, inputs, outputs, timestamps, prompt versions, and errors to provide complete visibility into model behavior.
+- **Prisma 7 ORM & PostgreSQL Database:** The data layer utilizing transactional guarantees to execute multi-row changes, blocking out race conditions during lazy content generation steps.
 
 ### Frontend UI Architecture Components
 
-* **Feature-Sliced Client Structure:** Code is divided into clean operational domains (`course`, `lesson`, `quiz`, `chat`), ensuring complete isolation of UI components, hooks, and API calling files.
-* **shadcn/ui Foundational Design:** Uses accessible, cleanly structured components (`Button`, `Card`, `ScrollArea`, `Progress`, `RadioGroup`) managed directly via Tailwind CSS utility classes.
-* **21st.dev Micro-Interactions:** Infuses advanced visual enhancements directly into the layout, using specialized UI treatments like shimmer loading states, text-reveal thresholds for newly generated data, and real-time typing indicators within conversational streams.
+- **Feature-Sliced Client Structure:** Code is divided into clean operational domains (`course`, `lesson`, `quiz`, `chat`), ensuring complete isolation of UI components, hooks, and API calling files.
+- **shadcn/ui Foundational Design:** Uses accessible, cleanly structured components (`Button`, `Card`, `ScrollArea`, `Progress`, `RadioGroup`) managed directly via Tailwind CSS utility classes.
+- **21st.dev Micro-Interactions:** Infuses advanced visual enhancements directly into the layout, using specialized UI treatments like shimmer loading states, text-reveal thresholds for newly generated data, and real-time typing indicators within conversational streams.
 
 ---
 
@@ -144,19 +144,19 @@ The output of this system is a **personalized, high-fidelity learning management
 
 ### Educational Assets
 
-* **Custom Curriculum Blueprints:** Organized multi-day course paths with explicitly ordered instructional modules.
-* **On-Demand Textbooks:** Completely context-aware markdown lesson segments styled dynamically on the client interface.
-* **Dynamic Knowledge Checkpoints:** Tailored multiple-choice diagnostic quizzes containing detailed correct-answer rationale strings.
+- **Custom Curriculum Blueprints:** Organized multi-day course paths with explicitly ordered instructional modules.
+- **On-Demand Textbooks:** Completely context-aware markdown lesson segments styled dynamically on the client interface.
+- **Dynamic Knowledge Checkpoints:** Tailored multiple-choice diagnostic quizzes containing detailed correct-answer rationale strings.
 
 ### Interactive Experiences
 
-* **Real-Time Conversational Examination Suite:** A stateful, real-time chat interface driven by persistent WebSockets and backend Redis Pub/Sub management. It simulates an oral interview examination without page refreshes, round-trip HTTP delays, or disconnected UI states.
+- **Real-Time Conversational Examination Suite:** A stateful, real-time chat interface driven by persistent WebSockets and backend Redis Pub/Sub management. It simulates an oral interview examination without page refreshes, round-trip HTTP delays, or disconnected UI states.
 
 ### Data & Telemetry Records
 
-* **Diagnostic Transcripts:** Comprehensive conversation histories compiled chronologically inside structured relational tables (`ChatSession` and `ChatMessage`).
-* **Mastery Performance Reviews:** Detailed final evaluations containing a quantitative grading score, pass/fail status updates, an analytical critique of student performance, and an AI-generated study plan outlining gaps in understanding.
-* **System Execution Logging:** Immutable tracking logs detailing model latency, tokens consumed, and error traces inside the `AgentRun` schema for system auditing.
+- **Diagnostic Transcripts:** Comprehensive conversation histories compiled chronologically inside structured relational tables (`ChatSession` and `ChatMessage`).
+- **Mastery Performance Reviews:** Detailed final evaluations containing a quantitative grading score, pass/fail status updates, an analytical critique of student performance, and an AI-generated study plan outlining gaps in understanding.
+- **System Execution Logging:** Immutable tracking logs detailing model latency, tokens consumed, and error traces inside the `AgentRun` schema for system auditing.
 
 ---
 
@@ -302,7 +302,6 @@ frontend/
 
 ```
 
-
 ---
 
 # Project Marko — Vertical Slices Implementation Plan
@@ -313,7 +312,8 @@ frontend/
 
 ### Backend Tasks
 
-* [ ] **Environment Configuration:** Initialize `backend/src/config/env.ts` using Zod validation:
+- [ ] **Environment Configuration:** Initialize `backend/src/config/env.ts` using Zod validation:
+
 ```ts
 PORT: z.string().default("3000"),
 DATABASE_URL: z.string(),
@@ -323,22 +323,21 @@ GOOGLE_AI_API_KEY: z.string()
 
 ```
 
-
-* [ ] **Database Initialization:** Run `npx prisma migrate dev --name init` to apply the baseline schema and generate the Prisma client.
-* [ ] **Core AI Factory (`src/lib/ai.ts`):** Build a unified router managing OpenAI and Google Gen AI SDK clients. Implement native structured output schemas using `response_format` (OpenAI JSON Schema) and `responseSchema` (Gemini config).
-* [ ] **AgentRun Telemetry (`src/lib/agent-run.ts`):** Program the `runAgent` higher-order interceptor function. Ensure it records row entries inside the `AgentRun` table matching execution states (`RUNNING`, `SUCCESS`, `FAILED`).
-* [ ] **Server Initialization:** Configure Express 5 with global error handling, standard JSON body parsers, and a baseline authentication middleware stub injecting a fallback user context (`req.user.id`).
+- [ ] **Database Initialization:** Run `npx prisma migrate dev --name init` to apply the baseline schema and generate the Prisma client.
+- [ ] **Core AI Factory (`src/lib/ai.ts`):** Build a unified router managing OpenAI and Google Gen AI SDK clients. Implement native structured output schemas using `response_format` (OpenAI JSON Schema) and `responseSchema` (Gemini config).
+- [ ] **AgentRun Telemetry (`src/lib/agent-run.ts`):** Program the `runAgent` higher-order interceptor function. Ensure it records row entries inside the `AgentRun` table matching execution states (`RUNNING`, `SUCCESS`, `FAILED`).
+- [ ] **Server Initialization:** Configure Express 5 with global error handling, standard JSON body parsers, and a baseline authentication middleware stub injecting a fallback user context (`req.user.id`).
 
 ### Frontend Tasks
 
-* [ ] **Environment Setup:** Scaffold a clean React + Vite + TypeScript runtime application.
-* [ ] **Tailwind & shadcn/ui Setup:** Install Tailwind CSS and initialize components via `npx shadcn-ui@latest init`. Add the fundamental component layout assets: `Button`, `Card`, `Input`, and `Toast`.
-* [ ] **HTTP Client Core (`src/lib/axios.ts`):** Instantiate an Axios client preset with global base URLs, interceptors tracking authentication payloads, and unified fallback error messaging.
-* [ ] **AppShell Structure (`src/components/layout/`):** Code a baseline workspace dashboard containing a responsive sidebar utility list and main layout display portals.
+- [ ] **Environment Setup:** Scaffold a clean React + Vite + TypeScript runtime application.
+- [ ] **Tailwind & shadcn/ui Setup:** Install Tailwind CSS and initialize components via `npx shadcn-ui@latest init`. Add the fundamental component layout assets: `Button`, `Card`, `Input`, and `Toast`.
+- [ ] **HTTP Client Core (`src/lib/axios.ts`):** Instantiate an Axios client preset with global base URLs, interceptors tracking authentication payloads, and unified fallback error messaging.
+- [ ] **AppShell Structure (`src/components/layout/`):** Code a baseline workspace dashboard containing a responsive sidebar utility list and main layout display portals.
 
 ### Verification Milestone
 
-* Deploying a network ping target against `/api/health` from the frontend app shell completes without authentication degradation, returning an explicit database connection verify notice.
+- Deploying a network ping target against `/api/health` from the frontend app shell completes without authentication degradation, returning an explicit database connection verify notice.
 
 ---
 
@@ -346,34 +345,31 @@ GOOGLE_AI_API_KEY: z.string()
 
 ### Backend Tasks
 
-* [ ] **Prompt Blueprint (`src/agents/prompts/planner.prompt.ts`):** Design strict template instructions enforcing structured layouts detailing individual core lesson profiles:
+- [ ] **Prompt Blueprint (`src/agents/prompts/planner.prompt.ts`):** Design strict template instructions enforcing structured layouts detailing individual core lesson profiles:
+
 ```json
 {
-  "title": "Course Title String",
-  "description": "Comprehensive Description String",
-  "lessons": [{ "title": "Lesson Subject", "order": 1 }]
+    "title": "Course Title String",
+    "description": "Comprehensive Description String",
+    "lessons": [{ "title": "Lesson Subject", "order": 1 }]
 }
-
 ```
 
-
-* [ ] **Orchestration Logic (`src/agents/planner.agent.ts`):** Link the prompt template to the `runAgent` pipeline wrapper.
-* [ ] **API Controller Surface (`src/modules/course/`):** Expose the execution target at `POST /api/courses`. Wrap the database initialization processes within an atomic **Prisma transaction** (`$transaction`):
-* Create the base `Course` entry flagged as `GENERATING`.
-* Deliver parameters to the AI layer.
-* Write the lesson block structural rows to disk following an error-free execution layout return.
-* Transition the parent `Course` record status parameter directly to `READY`.
-
-
+- [ ] **Orchestration Logic (`src/agents/planner.agent.ts`):** Link the prompt template to the `runAgent` pipeline wrapper.
+- [ ] **API Controller Surface (`src/modules/course/`):** Expose the execution target at `POST /api/courses`. Wrap the database initialization processes within an atomic **Prisma transaction** (`$transaction`):
+- Create the base `Course` entry flagged as `GENERATING`.
+- Deliver parameters to the AI layer.
+- Write the lesson block structural rows to disk following an error-free execution layout return.
+- Transition the parent `Course` record status parameter directly to `READY`.
 
 ### Frontend Tasks
 
-* [ ] **Input Controller Surface (`src/features/course/components/PlannerForm.tsx`):** Build a structured course initialization layout using shadcn forms. Inject custom 21st.dev tracking treatments (e.g., an animated shimmer tracking button).
-* [ ] **Dashboard Index View (`src/features/course/components/CourseList.tsx`):** Design an asynchronous summary table component to fetch and display active course collections (`GET /api/courses`). Add structural card skeletons to represent items actively processing inside the pipeline.
+- [ ] **Input Controller Surface (`src/features/course/components/PlannerForm.tsx`):** Build a structured course initialization layout using shadcn forms. Inject custom 21st.dev tracking treatments (e.g., an animated shimmer tracking button).
+- [ ] **Dashboard Index View (`src/features/course/components/CourseList.tsx`):** Design an asynchronous summary table component to fetch and display active course collections (`GET /api/courses`). Add structural card skeletons to represent items actively processing inside the pipeline.
 
 ### Verification Milestone
 
-* Submitting a goal parameter via the frontend UI triggers an asynchronous loader mechanism, blocks concurrent inputs, creates a course outline containing separate lesson objects in the database, and renders the course card dashboard elements successfully.
+- Submitting a goal parameter via the frontend UI triggers an asynchronous loader mechanism, blocks concurrent inputs, creates a course outline containing separate lesson objects in the database, and renders the course card dashboard elements successfully.
 
 ---
 
@@ -381,29 +377,30 @@ GOOGLE_AI_API_KEY: z.string()
 
 ### Backend Tasks
 
-* [ ] **Prompt Blueprint (`src/agents/prompts/content.prompt.ts`):** Author detailed educational content guidelines demanding deep, markdown-formatted technical articles.
-* [ ] **API Endpoint Controller (`src/modules/lesson/`):** Expose a safe data channel target at `GET /api/courses/:cId/lessons/:lId`.
-* [ ] **Race Condition Prevention Engine:** Build row locking mechanics directly within the retrieval query layout inside a Prisma database transaction:
+- [ ] **Prompt Blueprint (`src/agents/prompts/content.prompt.ts`):** Author detailed educational content guidelines demanding deep, markdown-formatted technical articles.
+- [ ] **API Endpoint Controller (`src/modules/lesson/`):** Expose a safe data channel target at `GET /api/courses/:cId/lessons/:lId`.
+- [ ] **Race Condition Prevention Engine:** Build row locking mechanics directly within the retrieval query layout inside a Prisma database transaction:
+
 ```ts
 // Verify row state safely before executing downstream AI triggers
 const lesson = await tx.lesson.findUnique({ where: { id: lId } });
-if (lesson.generationStatus === 'NOT_GENERATED') {
-  await tx.lesson.update({ where: { id: lId }, data: { generationStatus: 'GENERATING' } });
-  // Trigger Content Agent execution out-of-band...
+if (lesson.generationStatus === "NOT_GENERATED") {
+    await tx.lesson.update({
+        where: { id: lId },
+        data: { generationStatus: "GENERATING" },
+    });
+    // Trigger Content Agent execution out-of-band...
 }
-
 ```
-
-
 
 ### Frontend Tasks
 
-* [ ] **Markdown Render Context (`src/features/lesson/components/LessonViewer.tsx`):** Integrate an accessible parsing runtime library (e.g., `react-markdown`).
-* [ ] **Content Layout View:** Establish visual layout panels containing modular list sidebars mapping out course directories side-by-side with text canvases. Insert a 21st.dev progressive text-fade reveal layer to animate incoming data blocks once an ongoing generation job resolves.
+- [ ] **Markdown Render Context (`src/features/lesson/components/LessonViewer.tsx`):** Integrate an accessible parsing runtime library (e.g., `react-markdown`).
+- [ ] **Content Layout View:** Establish visual layout panels containing modular list sidebars mapping out course directories side-by-side with text canvases. Insert a 21st.dev progressive text-fade reveal layer to animate incoming data blocks once an ongoing generation job resolves.
 
 ### Verification Milestone
 
-* Selecting an ungenerated lesson triggers a localized processing state notice. The platform completes the core compilation pipeline out-of-band, caches the raw output safely inside the database table row, and displays the structured markdown components flawlessly on subsequent requests.
+- Selecting an ungenerated lesson triggers a localized processing state notice. The platform completes the core compilation pipeline out-of-band, caches the raw output safely inside the database table row, and displays the structured markdown components flawlessly on subsequent requests.
 
 ---
 
@@ -411,19 +408,19 @@ if (lesson.generationStatus === 'NOT_GENERATED') {
 
 ### Backend Tasks
 
-* [ ] **Quiz Generation Subsystem (`src/agents/quiz.agent.ts`):** Author a quiz generation agent that parses lesson content and structures a 4-option multiple-choice verification array matching database schema types.
-* [ ] **Endpoint Infrastructure (`src/modules/quiz/`):** Expose access parameters via `GET /.../lessons/:lId/quiz` (running lazy compilation rules) and `POST /.../lessons/:lId/quiz/attempt`.
-* [ ] **Deterministic Scoring Engine:** Code clean, algorithmic processing loops inside the controller logic to calculate quiz pass/fail rates ($\ge 60\%$) without triggering external AI inference engines.
-* [ ] **Progress Engine Hooks:** If a student passes, update the current lesson to `COMPLETED` and unlock the next sequential lesson tracking ID. If they fail, increment the target metadata version counter (`version + 1`) and reset the generation parameter block back to `NOT_GENERATED` to support a clean re-test.
+- [ ] **Quiz Generation Subsystem (`src/agents/quiz.agent.ts`):** Author a quiz generation agent that parses lesson content and structures a 4-option multiple-choice verification array matching database schema types.
+- [ ] **Endpoint Infrastructure (`src/modules/quiz/`):** Expose access parameters via `GET /.../lessons/:lId/quiz` (running lazy compilation rules) and `POST /.../lessons/:lId/quiz/attempt`.
+- [ ] **Deterministic Scoring Engine:** Code clean, algorithmic processing loops inside the controller logic to calculate quiz pass/fail rates ($\ge 60\%$) without triggering external AI inference engines.
+- [ ] **Progress Engine Hooks:** If a student passes, update the current lesson to `COMPLETED` and unlock the next sequential lesson tracking ID. If they fail, increment the target metadata version counter (`version + 1`) and reset the generation parameter block back to `NOT_GENERATED` to support a clean re-test.
 
 ### Frontend Tasks
 
-* [ ] **Form Evaluation Interface (`src/features/quiz/components/QuizInterface.tsx`):** Construct an multi-option radio group canvas utilizing accessible shadcn UI structures.
-* [ ] **Feedback Rendering Suite:** Design analytical summary views highlighting accurate selections versus error selections along with contextual correct-answer rationale blocks upon form validation returns.
+- [ ] **Form Evaluation Interface (`src/features/quiz/components/QuizInterface.tsx`):** Construct an multi-option radio group canvas utilizing accessible shadcn UI structures.
+- [ ] **Feedback Rendering Suite:** Design analytical summary views highlighting accurate selections versus error selections along with contextual correct-answer rationale blocks upon form validation returns.
 
 ### Verification Milestone
 
-* Submitting a set of quiz options yields immediate visual score metrics. Passing the threshold transitions the target lesson item's local sidebar token lock to active, while failing it generates a clean set of new quiz questions.
+- Submitting a set of quiz options yields immediate visual score metrics. Passing the threshold transitions the target lesson item's local sidebar token lock to active, while failing it generates a clean set of new quiz questions.
 
 ---
 
@@ -431,19 +428,17 @@ if (lesson.generationStatus === 'NOT_GENERATED') {
 
 ### Backend Tasks
 
-* [ ] **Gateway Bootstrap (`src/modules/chat/chat.gateway.ts`):** Attach standard `socket.io` server processes to the primary execution application stack. Integrate the official `@socket.io/redis-adapter` configuration to map messaging payloads through a Redis pub/sub broker instance.
-* [ ] **Interview Generation Subsystem:** Code initialization controllers at `POST /api/interviews` to ingest course lesson text profiles and map out core diagnostic milestones inside the database `Interview` schema.
-* [ ] **Event Transport Pipeline:** Program operational routing hooks for standard execution tracking operations:
-* `join_session`: Validates authentication context parameters and joins the client socket to a single unique session identifier room.
-* `send_message`: Appends user messaging records to the relational database structure, activates the conversational core **Interview Agent**, commits the generated response data payload as an assistant message string, and broadcasts the output payload back down the pipe via `socket.emit('new_message')`.
-
-
+- [ ] **Gateway Bootstrap (`src/modules/chat/chat.gateway.ts`):** Attach standard `socket.io` server processes to the primary execution application stack. Integrate the official `@socket.io/redis-adapter` configuration to map messaging payloads through a Redis pub/sub broker instance.
+- [ ] **Interview Generation Subsystem:** Code initialization controllers at `POST /api/interviews` to ingest course lesson text profiles and map out core diagnostic milestones inside the database `Interview` schema.
+- [ ] **Event Transport Pipeline:** Program operational routing hooks for standard execution tracking operations:
+- `join_session`: Validates authentication context parameters and joins the client socket to a single unique session identifier room.
+- `send_message`: Appends user messaging records to the relational database structure, activates the conversational core **Interview Agent**, commits the generated response data payload as an assistant message string, and broadcasts the output payload back down the pipe via `socket.emit('new_message')`.
 
 ### Frontend Tasks
 
-* [ ] **Transport Hook Setup (`src/hooks/useWebSocket.ts`):** Build a persistent custom hook using `socket.io-client` that handles automatic connection-recovery mechanisms and tracks transient session drops safely.
-* [ ] **Real-Time Interface Layout (`src/features/chat/components/ChatUI.tsx`):** Use a shadcn `ScrollArea` component to maintain anchor tracking focus on arriving messaging streams. Add a 21st.dev reactive AI text typing indicator mechanism to visually signal active backend pipeline inference operations.
+- [ ] **Transport Hook Setup (`src/hooks/useWebSocket.ts`):** Build a persistent custom hook using `socket.io-client` that handles automatic connection-recovery mechanisms and tracks transient session drops safely.
+- [ ] **Real-Time Interface Layout (`src/features/chat/components/ChatUI.tsx`):** Use a shadcn `ScrollArea` component to maintain anchor tracking focus on arriving messaging streams. Add a 21st.dev reactive AI text typing indicator mechanism to visually signal active backend pipeline inference operations.
 
 ### Verification Milestone
 
-* Launching the interview environment automatically hooks into the global WebSocket stream. Typing a response fires message payloads over the socket channel and receives immediate contextual follow-up questions from the interviewer agent without global page resets.
+- Launching the interview environment automatically hooks into the global WebSocket stream. Typing a response fires message payloads over the socket channel and receives immediate contextual follow-up questions from the interviewer agent without global page resets.

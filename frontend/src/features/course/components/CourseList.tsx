@@ -1,6 +1,5 @@
 import { CourseCard } from "./CourseCard";
 import type { Course } from "./CourseCard";
-import { BookOpen } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface CourseListProps {

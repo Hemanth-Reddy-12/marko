@@ -29,6 +29,16 @@ export function AppShell() {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
+    const isQuizPage = location.pathname.includes("/lessons/") && location.pathname.endsWith("/quiz");
+
+    if (isQuizPage) {
+        return (
+            <div className="flex h-screen w-screen flex-col bg-zinc-50/40 overflow-hidden">
+                <Outlet />
+            </div>
+        );
+    }
+
     return (
         <SidebarProvider>
             <AppSidebar />

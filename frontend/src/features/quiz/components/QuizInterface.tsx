@@ -12,9 +12,10 @@ interface QuizInterfaceProps {
     courseId: string;
     lessonId: string;
     onContinue?: () => void;
+    onProgressChange?: (answeredCount: number, totalCount: number) => void;
 }
 
-export function QuizInterface({ courseId, lessonId, onContinue }: QuizInterfaceProps) {
+export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange }: QuizInterfaceProps) {
     const [quiz, setQuiz] = React.useState<Quiz | null>(null);
     const [loading, setLoading] = React.useState(true);
     const [statusText, setStatusText] = React.useState("Loading quiz...");
@@ -33,7 +34,7 @@ export function QuizInterface({ courseId, lessonId, onContinue }: QuizInterfaceP
             const data = await fetchQuiz(courseId, lessonId);
             if (data.status === "GENERATING") {
                 setStatusText("Generating your personalized quiz...");
-                const polled = await pollQuiz(courseId, lessonId, (s) => setStatusText("Still generating... please wait"));
+                const polled = await pollQuiz(courseId, lessonId, () => setStatusText("Still generating... please wait"));
                 setQuiz(polled);
             } else {
                 setQuiz(data);
@@ -48,6 +49,16 @@ export function QuizInterface({ courseId, lessonId, onContinue }: QuizInterfaceP
     React.useEffect(() => {
         loadQuiz();
     }, [loadQuiz]);
+
+    React.useEffect(() => {
+        if (onProgressChange) {
+            if (quiz) {
+                onProgressChange(Object.keys(answers).length, quiz.questions.length);
+            } else {
+                onProgressChange(0, 0);
+            }
+        }
+    }, [answers, quiz, onProgressChange]);
 
     const handleSelect = (questionId: string, index: number) => {
         if (result) return; // disable changing answers after submission
@@ -161,13 +172,26 @@ export function QuizInterface({ courseId, lessonId, onContinue }: QuizInterfaceP
                                         <Label 
                                             key={optIdx} 
                                             className={cn(
-                                                "flex items-center space-x-3 border rounded-lg p-4 cursor-pointer transition-colors",
-                                                !isCompleted && "hover:bg-zinc-50 border-zinc-200",
-                                                selectedIdx === optIdx && !isCompleted && "border-zinc-900 bg-zinc-50",
+                                                "group flex items-center space-x-3 border rounded-xl p-4 cursor-pointer transition-all duration-200 select-none",
+                                                !isCompleted && "hover:bg-zinc-50/80 border-zinc-200/80 hover:border-zinc-300 hover:-translate-y-[1px] hover:shadow-sm active:translate-y-0",
+                                                selectedIdx === optIdx && !isCompleted && "border-zinc-900 bg-zinc-50/30 ring-1 ring-zinc-900 shadow-sm",
                                                 itemStateClass
                                             )}
                                         >
                                             <RadioGroupItem value={optIdx.toString()} id={`${q.id}-${optIdx}`} className="sr-only" />
+                                            
+                                            {/* Custom Radio Circle indicator */}
+                                            {!isCompleted && (
+                                                <div className={cn(
+                                                    "size-4 rounded-full border border-zinc-300 flex items-center justify-center shrink-0 transition-all duration-200",
+                                                    selectedIdx === optIdx ? "border-zinc-900 bg-zinc-900" : "group-hover:border-zinc-400"
+                                                )}>
+                                                    {selectedIdx === optIdx && (
+                                                        <div className="size-1.5 rounded-full bg-white" />
+                                                    )}
+                                                </div>
+                                            )}
+
                                             <div className="flex-1 text-sm font-medium leading-relaxed">{opt}</div>
                                             {icon}
                                         </Label>

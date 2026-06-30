@@ -12,6 +12,7 @@ export interface PlannerInput {
 export interface PlannedLesson {
     title: string;
     order: number;
+    weight: "light" | "medium" | "heavy";
 }
 
 export interface PlannerOutput {
@@ -44,8 +45,13 @@ const PLANNER_SCHEMA = {
                         type: "integer",
                         description: "The sequential 1-indexed order of this lesson",
                     },
+                    weight: {
+                        type: "string",
+                        enum: ["light", "medium", "heavy"],
+                        description: "The complexity/importance weight of the lesson (light = basics/introduction, medium = core standard topics, heavy = advanced/comprehensive/capstone topics)",
+                    },
                 },
-                required: ["title", "order"],
+                required: ["title", "order", "weight"],
                 additionalProperties: false,
             },
             description: "The list of lessons in chronological order",

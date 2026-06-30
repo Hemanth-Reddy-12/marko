@@ -1,12 +1,10 @@
 import * as React from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { fetchApi } from "@/lib/api";
 import { QuizInterface } from "@/features/quiz/components/QuizInterface";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, CheckCircle2, Lock, Circle, Play } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ArrowLeft } from "lucide-react";
 
 interface CourseHeader {
     id: string;
@@ -19,25 +17,35 @@ interface CourseHeader {
     }[];
 }
 
-const statusConfig = {
-    LOCKED: { icon: Lock, color: "text-zinc-400" },
-    AVAILABLE: { icon: Circle, color: "text-blue-500" },
-    IN_PROGRESS: { icon: Play, color: "text-amber-500" },
-    COMPLETED: { icon: CheckCircle2, color: "text-emerald-500" },
-} as const;
-
 export function QuizPage() {
-    const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
+    const { courseId, lessonId } = useParams<{
+        courseId: string;
+        lessonId: string;
+    }>();
     const navigate = useNavigate();
     const [course, setCourse] = React.useState<CourseHeader | null>(null);
     const [loading, setLoading] = React.useState(true);
+    const [progress, setProgress] = React.useState({ answered: 0, total: 0 });
+
+    const handleProgressChange = React.useCallback(
+        (answered: number, total: number) => {
+            setProgress((prev) => {
+                if (prev.answered === answered && prev.total === total)
+                    return prev;
+                return { answered, total };
+            });
+        },
+        [],
+    );
 
     React.useEffect(() => {
         if (!courseId) return;
 
         const loadCourseInfo = async () => {
             try {
-                const data = await fetchApi<CourseHeader>(`/api/courses/${courseId}`);
+                const data = await fetchApi<CourseHeader>(
+                    `/api/courses/${courseId}`,
+                );
                 setCourse(data);
             } catch (err) {
                 console.error("Failed to load course sidebar info", err);
@@ -51,118 +59,102 @@ export function QuizPage() {
 
     const handleContinue = () => {
         if (!course) return;
-        const currentLessonIndex = course.lessons.findIndex(l => l.id === lessonId);
-        if (currentLessonIndex !== -1 && currentLessonIndex < course.lessons.length - 1) {
+        const currentLessonIndex = course.lessons.findIndex(
+            (l) => l.id === lessonId,
+        );
+        if (
+            currentLessonIndex !== -1 &&
+            currentLessonIndex < course.lessons.length - 1
+        ) {
             const nextLesson = course.lessons[currentLessonIndex + 1];
             navigate(`/courses/${courseId}/lessons/${nextLesson.id}`);
         } else {
-            // End of course, navigate to dashboard or interview room
+            // End of course, navigate to dashboard
             navigate(`/courses/${courseId}`);
         }
     };
 
     if (!courseId || !lessonId) {
-        return <div className="p-8 text-center text-red-500">Invalid URL parameters</div>;
+        return (
+            <div className="p-8 text-center text-red-500">
+                Invalid URL parameters
+            </div>
+        );
     }
 
+    const currentLesson = course?.lessons.find((l) => l.id === lessonId);
+    const lessonTitle = currentLesson?.title || "";
+
+    const percentAnswered =
+        progress.total > 0 ? (progress.answered / progress.total) * 100 : 0;
+
     return (
-        <div className="flex flex-1 h-[calc(100vh-4rem)] overflow-hidden bg-white border border-zinc-200/80 shadow-none rounded-xl">
-            {/* Sidebar / Curriculum List */}
-            <div className="w-80 border-r border-zinc-200/80 bg-zinc-50/50 flex flex-col shrink-0 hidden md:flex">
-                <div className="p-4 flex items-center gap-3">
+        <div className="flex flex-col h-screen w-full bg-zinc-50/50 overflow-hidden">
+            {/* Elegant Focus Mode Header */}
+            <header className="h-16 shrink-0 bg-white border-b border-zinc-200/80 px-6 flex items-center justify-between z-10">
+                <div className="flex items-center gap-4">
                     <button
-                        onClick={() => navigate(`/courses/${courseId}/lessons/${lessonId}`)}
-                        className="size-11 rounded-full flex items-center justify-center hover:bg-zinc-200 transition-colors"
+                        onClick={() =>
+                            navigate(`/courses/${courseId}/lessons/${lessonId}`)
+                        }
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-all text-sm font-medium"
                     >
-                        <ArrowLeft className="size-5 text-zinc-600" />
+                        <ArrowLeft className="size-4" />
+                        <span>Exit Quiz</span>
                     </button>
-                    <div className="min-w-0 flex-1">
-                        <div className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
-                            Course Curriculum
+                    <div className="h-4 w-px bg-zinc-200" />
+                    {loading ? (
+                        <Skeleton className="h-4 w-40" />
+                    ) : (
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                                Quiz:
+                            </span>
+                            <span className="text-sm font-semibold text-zinc-900 truncate max-w-[280px] md:max-w-md">
+                                {lessonTitle}
+                            </span>
                         </div>
-                        {loading ? (
-                            <Skeleton className="h-4 w-32 mt-1" />
-                        ) : (
-                            <div className="text-sm font-semibold text-zinc-900 truncate">
-                                {course?.title}
-                            </div>
-                        )}
-                    </div>
+                    )}
                 </div>
 
-                <Separator />
-
-                <ScrollArea className="flex-1">
-                    <div className="p-4 flex flex-col gap-1">
-                        {loading ? (
-                            Array.from({ length: 5 }).map((_, i) => (
-                                <Skeleton key={i} className="h-12 w-full rounded-md" />
-                            ))
-                        ) : (
-                            course?.lessons.map((lesson) => {
-                                const isActive = lesson.id === lessonId;
-                                const isClickable = lesson.status !== "LOCKED";
-                                const StatusIcon = statusConfig[lesson.status].icon;
-
-                                const content = (
-                                    <div
-                                        className={cn(
-                                            "flex items-center gap-3 p-3 rounded-lg text-sm transition-all",
-                                            isActive ? "bg-zinc-900 text-white" : "hover:bg-zinc-100",
-                                            !isClickable && "opacity-50 cursor-not-allowed hover:bg-transparent"
-                                        )}
-                                    >
-                                        <StatusIcon
-                                            className={cn(
-                                                "size-4 shrink-0",
-                                                isActive ? "text-white" : statusConfig[lesson.status].color
-                                            )}
-                                        />
-                                        <div className="flex flex-col min-w-0 flex-1">
-                                            <span className="truncate font-medium">
-                                                {lesson.order}. {lesson.title}
-                                            </span>
-                                        </div>
-                                    </div>
-                                );
-
-                                if (isClickable) {
-                                    return (
-                                        <Link key={lesson.id} to={`/courses/${courseId}/lessons/${lesson.id}`}>
-                                            {content}
-                                        </Link>
-                                    );
-                                }
-
-                                return <div key={lesson.id}>{content}</div>;
-                            })
-                        )}
+                <div className="flex items-center gap-3">
+                    {progress.total > 0 && (
+                        <span className="text-xs font-medium text-zinc-500 bg-zinc-100 px-2.5 py-1 rounded-md">
+                            {progress.answered} of {progress.total} Answered
+                        </span>
+                    )}
+                    <div className="flex items-center gap-2 text-xs font-semibold text-zinc-600 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full border border-emerald-200/50 shadow-sm">
+                        <span className="relative flex size-2 shrink-0">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full size-2 bg-emerald-500"></span>
+                        </span>
+                        Focus Mode
                     </div>
-                </ScrollArea>
-            </div>
-
-            {/* Main Content Viewer */}
-            <div className="flex-1 flex flex-col h-full bg-white relative">
-                {/* Mobile Back Button */}
-                <div className="md:hidden border-b border-zinc-200/80 p-3 flex items-center gap-3">
-                    <button
-                        onClick={() => navigate(`/courses/${courseId}/lessons/${lessonId}`)}
-                        className="size-11 rounded-full flex items-center justify-center hover:bg-zinc-100"
-                    >
-                        <ArrowLeft className="size-5 text-zinc-600" />
-                    </button>
-                    <span className="text-sm font-semibold truncate flex-1">
-                        {course?.title || "Loading..."}
-                    </span>
                 </div>
+            </header>
 
-                <ScrollArea className="flex-1">
-                    <QuizInterface 
-                        courseId={courseId} 
-                        lessonId={lessonId} 
-                        onContinue={handleContinue} 
-                        key={`${courseId}-${lessonId}`} 
+            {/* Continuous Progress Indicator */}
+            {progress.total > 0 && (
+                <div className="w-full h-1 bg-zinc-100 shrink-0 relative z-10">
+                    <div
+                        className="h-full bg-zinc-900 transition-all duration-300 ease-out"
+                        style={{ width: `${percentAnswered}%` }}
                     />
+                </div>
+            )}
+
+            {/* Quiz Content Scroll Area */}
+            <div className="flex-1 overflow-hidden relative">
+                <ScrollArea className="h-full w-full">
+                    <div className="py-8 md:py-12">
+                        <QuizInterface
+                            courseId={courseId}
+                            lessonId={lessonId}
+                            onContinue={handleContinue}
+                            onProgressChange={handleProgressChange}
+                            key={`${courseId}-${lessonId}`}
+                        />
+                    </div>
                 </ScrollArea>
             </div>
         </div>

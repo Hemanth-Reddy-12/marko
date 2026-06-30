@@ -8,6 +8,7 @@ export interface QuizInput {
     userId?: string;
     lessonId: string;
     quizId: string;
+    limit: number;
 }
 
 export interface QuizOutput {
@@ -59,8 +60,8 @@ export async function runQuizAgent(input: QuizInput): Promise<QuizOutput> {
         context,
         {
             messages: [
-                { role: "system", content: quizSystemPrompt },
-                { role: "user", content: getQuizUserPrompt(input.lessonTitle, input.lessonContent) },
+                { role: "system", content: quizSystemPrompt(input.limit) },
+                { role: "user", content: getQuizUserPrompt(input.lessonTitle, input.lessonContent, input.limit) },
             ],
         },
         QUIZ_SCHEMA,
