@@ -1,50 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
 @import "tailwindcss";
 
 @plugin "tailwindcss-animate";
 @plugin "@tailwindcss/typography";
 
 :root {
-  --font-heading: 'Geist Variable', sans-serif;
-  --font-body: 'Geist Variable', sans-serif;
+  --font-heading: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
   --font-mono: 'JetBrains Mono Variable', monospace;
 
-  --background: #FAFAFA;
-  --foreground: #09090B;
+  /* Core palette */
+  --background: #F8FAFC;
+  --foreground: #0F172A;
 
   --card: #FFFFFF;
-  --card-foreground: #09090B;
+  --card-foreground: #0F172A;
 
   --popover: #FFFFFF;
-  --popover-foreground: #09090B;
+  --popover-foreground: #0F172A;
 
-  --primary: #18181B;
-  --primary-foreground: #FAFAFA;
+  --primary: #0F172A;
+  --primary-foreground: #F8FAFC;
 
-  --secondary: #F4F4F5;
-  --secondary-foreground: #18181B;
+  --secondary: #F1F5F9;
+  --secondary-foreground: #0F172A;
 
-  --accent: #F4F4F5;
-  --accent-foreground: #18181B;
+  --accent: #3B82F6;
+  --accent-foreground: #FFFFFF;
 
-  --muted: #F4F4F5;
-  --muted-foreground: #71717A;
+  --accent-soft: #EFF6FF;
+  --accent-soft-foreground: #1D4ED8;
+
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
 
   --destructive: #EF4444;
-  --destructive-foreground: #FAFAFA;
+  --destructive-foreground: #FFFFFF;
 
-  --border: #E4E4E7;
-  --input: #E4E4E7;
-  --ring: #18181B;
-  --radius: 0.5rem;
+  --success: #10B981;
+  --success-foreground: #FFFFFF;
+  --success-soft: #ECFDF5;
 
-  --sidebar: #FAFAFA;
-  --sidebar-foreground: #09090B;
-  --sidebar-primary: #18181B;
-  --sidebar-primary-foreground: #FAFAFA;
-  --sidebar-accent: #F4F4F5;
-  --sidebar-accent-foreground: #18181B;
-  --sidebar-border: #E4E4E7;
-  --sidebar-ring: #18181B;
+  --warning: #F59E0B;
+  --warning-soft: #FFFBEB;
+
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #3B82F6;
+  --radius: 0.625rem;
+
+  /* Sidebar */
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #0F172A;
+  --sidebar-primary: #3B82F6;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #EFF6FF;
+  --sidebar-accent-foreground: #1D4ED8;
+  --sidebar-border: #E2E8F0;
+  --sidebar-ring: #3B82F6;
+
+  /* Motion tokens */
+  --motion-fast: 150ms;
+  --motion-normal: 250ms;
+  --motion-slow: 400ms;
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @theme inline {
@@ -85,6 +105,7 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
 }
 
 @layer base {
@@ -92,18 +113,73 @@
     @apply border-border outline-ring/50;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     font-family: var(--font-body);
     @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
+  h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
-    @apply font-semibold tracking-tight text-zinc-900;
+    @apply font-semibold tracking-tight text-foreground;
+  }
+
+  /* Focus visible ring — keyboard only */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* Touch action for faster tap response */
+  button, a, [role="button"] {
+    touch-action: manipulation;
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  .animate-in-up {
+    animation: slide-in-up 0.3s var(--ease-out) both;
+  }
+
+  @keyframes slide-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-in-fade {
+    animation: fade-in 0.2s ease-out both;
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .glass {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 }
