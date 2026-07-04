@@ -1,9 +1,17 @@
-import { authClient } from "@/lib/auth-client";
+import { authClient, useSession } from "@/lib/auth-client";
+import { Navigate } from "react-router-dom";
 import { BGPattern } from "@/components/ui/bg-pattern";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { MarkoLogo } from "@/components/ui/logo";
 
-function GoogleIcon({ className, skeleton }: { className?: string; skeleton?: boolean }) {
+function GoogleIcon({
+    className,
+    skeleton,
+}: {
+    className?: string;
+    skeleton?: boolean;
+}) {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -41,7 +49,13 @@ function GoogleIcon({ className, skeleton }: { className?: string; skeleton?: bo
     );
 }
 
-function GithubIcon({ className, skeleton }: { className?: string; skeleton?: boolean }) {
+function GithubIcon({
+    className,
+    skeleton,
+}: {
+    className?: string;
+    skeleton?: boolean;
+}) {
     return (
         <svg
             viewBox="0 0 24 24"
@@ -50,20 +64,31 @@ function GithubIcon({ className, skeleton }: { className?: string; skeleton?: bo
         >
             <path
                 d="M12 2.247a10 10 0 0 0-3.162 19.487c.5.088.687-.212.687-.475 0-.237-.012-1.025-.012-1.862-2.513.462-3.163-.613-3.363-1.175a3.64 3.64 0 0 0-1.025-1.413c-.35-.187-.85-.65-.013-.662a2 2 0 0 1 1.538 1.025 2.137 2.137 0 0 0 2.912.825 2.1 2.1 0 0 1 .638-1.338c-2.225-.25-4.55-1.112-4.55-4.937a3.9 3.9 0 0 1 1.025-2.688 3.6 3.6 0 0 1 .1-2.65s.837-.262 2.75 1.025a9.43 9.43 0 0 1 5 0c1.912-1.3 2.75-1.025 2.75-1.025a3.6 3.6 0 0 1 .1 2.65 3.87 3.87 0 0 1 1.025 2.688c0 3.837-2.338 4.687-4.562 4.937a2.37 2.37 0 0 1 .674 1.85c0 1.338-.012 2.413-.012 2.75 0 .263.187.575.687.475A10.005 10.005 0 0 0 12 2.247"
-                style={{ fill: skeleton ? "currentColor" : undefined, opacity: skeleton ? 0.15 : 1 }}
+                style={{
+                    fill: skeleton ? "currentColor" : undefined,
+                    opacity: skeleton ? 0.15 : 1,
+                }}
             />
         </svg>
     );
 }
 
 export function LoginPage() {
-    const [loadingProvider, setLoadingProvider] = useState<"google" | "github" | null>(null);
+    const [loadingProvider, setLoadingProvider] = useState<
+        "google" | "github" | null
+    >(null);
+
+    const { data: session } = useSession();
+
+    if (session) {
+        return <Navigate to="/dashboard" replace />;
+    }
 
     const handleGoogleLogin = () => {
         setLoadingProvider("google");
         authClient.signIn.social({
             provider: "google",
-            callbackURL: "http://localhost:5173/",
+            callbackURL: "http://localhost:5173/dashboard",
         });
     };
 
@@ -71,61 +96,59 @@ export function LoginPage() {
         setLoadingProvider("github");
         authClient.signIn.social({
             provider: "github",
-            callbackURL: "http://localhost:5173/",
+            callbackURL: "http://localhost:5173/dashboard",
         });
     };
 
     return (
-        <div className="relative flex min-h-screen items-center justify-center p-4">
-            <BGPattern variant="grid" mask="fade-edges" size={32} />
-            <div className="flex w-full max-w-md flex-col items-center gap-8">
-                <div className="text-center">
-                    <h1 className="text-4xl font-bold tracking-tight">
-                        <span className="relative inline-block">
-                            <span className="relative z-10 bg-linear-to-r from-primary via-foreground to-primary bg-clip-text text-transparent">
-                                Marko
-                            </span>
-                            <span className="absolute -bottom-1 left-0 h-2 w-full rounded-sm bg-primary/20" />
-                        </span>
-                    </h1>
-                    <p className="mt-4 text-sm text-muted-foreground">
-                        Login with your Google or Github account
+        <div className="relative flex min-h-screen items-center justify-center p-4 bg-bauhaus-yellow">
+            {/* Bauhaus Decor */}
+            <div className="absolute top-0 left-0 w-32 h-screen bg-bauhaus-blue border-r-4 border-black hidden md:block" />
+            <div className="absolute bottom-16 right-16 size-48 bg-bauhaus-red rounded-full border-4 border-black" />
+            <div className="flex w-full max-w-md flex-col items-center gap-8 relative z-10 bg-white border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,1)] p-8">
+                <div className="text-center flex flex-col items-center gap-4 w-full">
+                    <div className="w-full max-w-[240px] px-2 py-4 flex items-center justify-center">
+                        <MarkoLogo className="w-full h-auto" />
+                    </div>
+                    <p className="text-xs font-bold text-black/70 uppercase tracking-widest mt-2">
+                        LOGIN TO YOUR WORKSPACE
                     </p>
                 </div>
 
-                <div className="grid w-full grid-cols-2 gap-4">
-                    <div className="group relative flex aspect-square flex-col items-center justify-center duration-300">
-                        <motion.div
-                            onClick={loadingProvider ? undefined : handleGoogleLogin}
-                            whileHover={loadingProvider ? undefined : { scale: 1.2 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                            className={loadingProvider === "google" ? "animate-pulse cursor-not-allowed" : "cursor-pointer"}
-                        >
-                            <GoogleIcon className="size-12" skeleton={loadingProvider === "google"} />
-                            <span className="text-sm font-medium text-foreground transition-colors duration-300">
-                                Google
-                            </span>
-                        </motion.div>
-                    </div>
+                <div className="flex flex-col w-full gap-4">
+                    <motion.div
+                        onClick={loadingProvider ? undefined : handleGoogleLogin}
+                        whileHover={loadingProvider ? undefined : { x: 2, y: 2 }}
+                        className={
+                            loadingProvider === "google"
+                                ? "animate-pulse cursor-not-allowed bg-white border-4 border-black p-4 flex items-center justify-center gap-4"
+                                : "cursor-pointer bg-white border-4 border-black p-4 flex items-center justify-center gap-4 shadow-[4px_4px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all"
+                        }
+                    >
+                        <GoogleIcon className="size-6" skeleton={loadingProvider === "google"} />
+                        <span className="text-sm font-black uppercase tracking-widest text-black">
+                            {loadingProvider === "google" ? "LOADING..." : "CONTINUE WITH GOOGLE"}
+                        </span>
+                    </motion.div>
 
-                    <div className="group relative flex aspect-square flex-col items-center justify-center duration-300">
-                        <motion.div
-                            onClick={loadingProvider ? undefined : handleGithubLogin}
-                            whileHover={loadingProvider ? undefined : { scale: 1.2 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                            className={loadingProvider === "github" ? "animate-pulse cursor-not-allowed" : "cursor-pointer"}
-                        >
-                            <GithubIcon className="size-12 fill-foreground transition-colors duration-300" skeleton={loadingProvider === "github"} />
-                            <span className="text-sm font-medium text-foreground transition-colors duration-300 group-hover:text-foreground">
-                                GitHub
-                            </span>
-                        </motion.div>
-                    </div>
+                    <motion.div
+                        onClick={loadingProvider ? undefined : handleGithubLogin}
+                        whileHover={loadingProvider ? undefined : { x: 2, y: 2 }}
+                        className={
+                            loadingProvider === "github"
+                                ? "animate-pulse cursor-not-allowed bg-black text-white border-4 border-black p-4 flex items-center justify-center gap-4"
+                                : "cursor-pointer bg-black text-white border-4 border-black p-4 flex items-center justify-center gap-4 shadow-[4px_4px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all"
+                        }
+                    >
+                        <GithubIcon className="size-6 fill-white" skeleton={loadingProvider === "github"} />
+                        <span className="text-sm font-black uppercase tracking-widest text-white">
+                            {loadingProvider === "github" ? "LOADING..." : "CONTINUE WITH GITHUB"}
+                        </span>
+                    </motion.div>
                 </div>
 
-                <p className="text-center text-xs text-muted-foreground">
-                    By continuing, you agree to our Terms of Service and Privacy
-                    Policy
+                <p className="text-center text-[10px] font-bold text-black/60 uppercase tracking-widest leading-relaxed">
+                    BY CONTINUING, YOU AGREE TO OUR<br />TERMS OF SERVICE AND PRIVACY POLICY
                 </p>
             </div>
         </div>

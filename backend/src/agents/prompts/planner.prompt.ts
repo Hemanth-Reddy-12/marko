@@ -6,10 +6,11 @@ For each lesson, assign a weight based on its importance, depth, and complexity:
 - "heavy": Crucial, complex, advanced, or comprehensive capstone/synthesis topics (designed for an in-depth 15-question quiz).
 Distribute these weights logically across the curriculum (e.g. basic introduction at the start is "light", core lessons are "medium", and advanced or capstone topics towards the end or major milestones are "heavy").
 Explicitly space out complex ("heavy") topics and include integration or review lessons where appropriate to ensure better pacing and flow.
+Estimate a strict time (estimateTime) for the overall course and for each lesson individually, providing a realistic estimate based on lesson weight and topic complexity.
 The output MUST strictly match the requested JSON schema.`;
 
 export const getPlannerUserPrompt = (goal: string, durationDays: number) => {
     return `Goal: ${goal}
 Duration: ${durationDays} days.
-Please generate the course with a list of lessons that cover the goal within the given duration.`;
+Please generate the course with a list of lessons that cover the goal within the given duration. Include estimated duration in minutes for the course and each lesson.`;
 };

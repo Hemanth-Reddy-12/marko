@@ -8,10 +8,11 @@ import "katex/dist/katex.min.css";
 import { codeToHtml } from "shiki";
 import { TextReveal } from "@/components/animated/TextReveal";
 import { Skeleton } from "@/components/ui/skeleton";
-import { pollLesson } from "../api/lesson.api";
+import { pollLesson, regenerateLesson } from "../api/lesson.api";
 import type { LessonResponse } from "../types";
-import { AlertCircle, ArrowRight } from "lucide-react";
+import { AlertCircle, ArrowRight, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface LessonViewerProps {
     courseId: string;
@@ -29,7 +30,7 @@ const CodeHighlight = ({ className, children, node, ...props }: any) => {
         if (match) {
             codeToHtml(String(children).replace(/\n$/, ''), {
                 lang: language,
-                theme: 'dark-plus'
+                theme: 'github-dark' // Minimal dark theme
             }).then(res => {
                 if (mounted) setHtml(res);
             }).catch(() => {
@@ -48,10 +49,10 @@ const CodeHighlight = ({ className, children, node, ...props }: any) => {
     }
 
     return (
-        <div className="animate-pulse bg-zinc-900 rounded-md p-4 mb-4">
-            <div className="h-4 bg-zinc-800 rounded w-1/4 mb-2"></div>
-            <div className="h-4 bg-zinc-800 rounded w-1/2 mb-2"></div>
-            <div className="h-4 bg-zinc-800 rounded w-3/4"></div>
+        <div className="animate-pulse bg-primary rounded-none p-4 mb-4 border border-border">
+            <div className="h-4 bg-muted/20 rounded-none w-1/4 mb-2"></div>
+            <div className="h-4 bg-muted/20 rounded-none w-1/2 mb-2"></div>
+            <div className="h-4 bg-muted/20 rounded-none w-3/4"></div>
         </div>
     );
 };
@@ -61,6 +62,30 @@ export function LessonViewer({ courseId, lessonId, onNext }: LessonViewerProps) 
     const [loading, setLoading] = React.useState(true);
     const [statusText, setStatusText] = React.useState("Loading lesson...");
     const [error, setError] = React.useState<string | null>(null);
+    const [regenerating, setRegenerating] = React.useState(false);
+
+    const handleRegenerate = async () => {
+        if (regenerating) return;
+        setRegenerating(true);
+        setLoading(true);
+        setError(null);
+        setStatusText("Regenerating lesson content...");
+        setLesson(null);
+        try {
+            await regenerateLesson(courseId, lessonId);
+            const polled = await pollLesson(courseId, lessonId, () =>
+                setStatusText("Still regenerating...")
+            );
+            setLesson(polled);
+            toast.success("Lesson regenerated successfully");
+        } catch (err: any) {
+            setError(err.message || "Failed to regenerate lesson");
+            toast.error(err.message || "Failed to regenerate lesson");
+        } finally {
+            setRegenerating(false);
+            setLoading(false);
+        }
+    };
 
     React.useEffect(() => {
         let mounted = true;
@@ -70,14 +95,13 @@ export function LessonViewer({ courseId, lessonId, onNext }: LessonViewerProps) 
             setError(null);
 
             try {
-                // Initial fetch
                 const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/courses/${courseId}/lessons/${lessonId}`, {
                     credentials: "include"
                 });
 
                 if (res.status === 202) {
-                    setStatusText("Generating your personalized lesson. This may take a moment...");
-                    const polled = await pollLesson(courseId, lessonId, () => setStatusText("Still generating... please wait"));
+                    setStatusText("Generating curriculum content. This may take a moment...");
+                    const polled = await pollLesson(courseId, lessonId, () => setStatusText("Still processing..."));
                     if (mounted) {
                         setLesson(polled);
                     }
@@ -110,31 +134,31 @@ export function LessonViewer({ courseId, lessonId, onNext }: LessonViewerProps) 
 
     if (loading) {
         return (
-            <div className="flex flex-col gap-6 max-w-3xl mx-auto w-full p-6">
-                <div className="flex items-center gap-4 text-sm text-zinc-500 mb-4 animate-pulse">
-                    <div className="size-4 rounded-full border-2 border-zinc-300 border-t-zinc-900 animate-spin" />
+            <div className="flex flex-col gap-8 max-w-4xl mx-auto w-full p-12">
+                <div className="flex items-center gap-4 text-xs font-mono uppercase tracking-widest text-muted-foreground mb-8">
+                    <div className="size-3 bg-bauhaus-blue rounded-none animate-pulse" />
                     {statusText}
                 </div>
-                <Skeleton className="h-10 w-3/4 rounded-md" />
-                <Skeleton className="h-4 w-full rounded-md mt-4" />
-                <Skeleton className="h-4 w-5/6 rounded-md" />
-                <Skeleton className="h-4 w-4/6 rounded-md" />
-                <Skeleton className="h-32 w-full rounded-md mt-6" />
-                <Skeleton className="h-4 w-full rounded-md mt-6" />
-                <Skeleton className="h-4 w-5/6 rounded-md" />
+                <Skeleton className="h-12 w-3/4 rounded-none" />
+                <div className="flex flex-col gap-4 mt-8">
+                    <Skeleton className="h-4 w-full rounded-none" />
+                    <Skeleton className="h-4 w-full rounded-none" />
+                    <Skeleton className="h-4 w-5/6 rounded-none" />
+                </div>
+                <Skeleton className="h-48 w-full rounded-none mt-12" />
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center gap-4 py-20 px-6 text-center">
-                <div className="size-12 rounded-full bg-red-50 flex items-center justify-center">
-                    <AlertCircle className="size-6 text-red-500" />
+            <div className="flex flex-col items-center justify-center gap-6 py-32 px-6 text-center">
+                <div className="size-16 border border-border bg-muted/20 flex items-center justify-center">
+                    <AlertCircle className="size-8 text-destructive" />
                 </div>
                 <div>
-                    <h3 className="text-lg font-bold text-zinc-900">Failed to load lesson</h3>
-                    <p className="text-sm text-zinc-500 mt-1">{error}</p>
+                    <h3 className="text-xl font-heading font-semibold text-foreground">Failed to load lesson</h3>
+                    <p className="text-sm text-muted-foreground mt-2">{error}</p>
                 </div>
             </div>
         );
@@ -142,27 +166,39 @@ export function LessonViewer({ courseId, lessonId, onNext }: LessonViewerProps) 
 
     if (!lesson?.content) {
         return (
-            <div className="flex flex-col items-center justify-center gap-4 py-20 px-6 text-center">
-                <div className="size-12 rounded-full bg-zinc-50 flex items-center justify-center">
-                    <AlertCircle className="size-6 text-zinc-400" />
+            <div className="flex flex-col items-center justify-center gap-6 py-32 px-6 text-center">
+                <div className="size-16 border border-border bg-muted/20 flex items-center justify-center">
+                    <AlertCircle className="size-8 text-muted-foreground" />
                 </div>
                 <div>
-                    <h3 className="text-lg font-bold text-zinc-900">No content available</h3>
-                    <p className="text-sm text-zinc-500 mt-1">This lesson has not been generated properly.</p>
+                    <h3 className="text-xl font-heading font-semibold text-foreground">No content available</h3>
+                    <p className="text-sm text-muted-foreground mt-2">This lesson has not been generated properly.</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <TextReveal className="max-w-3xl mx-auto w-full p-6 pb-24">
-            <div className="prose prose-zinc prose-sm sm:prose-base max-w-none 
-                prose-headings:font-bold prose-h1:text-3xl prose-h1:tracking-tight prose-h2:text-2xl prose-h2:tracking-tight 
-                prose-h3:text-xl prose-p:leading-relaxed prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline
-                prose-pre:text-zinc-50 prose-pre:border prose-pre:border-zinc-800
-                prose-code:text-rose-500 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none
-                prose-img:rounded-xl prose-img:border prose-img:border-zinc-200/50
-                prose-blockquote:border-l-4 prose-blockquote:border-zinc-300 prose-blockquote:bg-zinc-50 prose-blockquote:py-2 prose-blockquote:pr-4 prose-blockquote:pl-5 prose-blockquote:not-italic prose-blockquote:text-zinc-700
+        <TextReveal className="max-w-4xl mx-auto w-full p-8 md:p-16 pb-32">
+            <div className="flex justify-end mb-6">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRegenerate}
+                    disabled={regenerating}
+                    className="rounded-none text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-muted gap-2 h-8"
+                >
+                    <RefreshCw className={regenerating ? "size-3.5 animate-spin" : "size-3.5"} />
+                    {regenerating ? "Regenerating" : "Regenerate"}
+                </Button>
+            </div>
+            <div className="prose dark:prose-invert prose-zinc prose-base max-w-none 
+                prose-headings:font-heading prose-headings:font-semibold prose-headings:text-foreground prose-h1:text-4xl prose-h1:tracking-tight prose-h2:text-2xl prose-h2:tracking-tight 
+                prose-h3:text-xl prose-p:leading-relaxed prose-p:text-foreground/95 prose-strong:text-foreground prose-li:text-foreground prose-ol:text-foreground prose-ul:text-foreground prose-a:text-bauhaus-blue prose-a:no-underline hover:prose-a:underline
+                prose-pre:border prose-pre:border-border prose-pre:rounded-none
+                prose-code:text-bauhaus-red prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-none prose-code:before:content-none prose-code:after:content-none prose-code:bg-muted/50
+                prose-img:rounded-none prose-img:border prose-img:border-border
+                prose-blockquote:border-l-2 prose-blockquote:border-foreground prose-blockquote:bg-muted/30 prose-blockquote:py-4 prose-blockquote:pr-4 prose-blockquote:pl-6 prose-blockquote:not-italic prose-blockquote:text-foreground
             ">
                 <ReactMarkdown
                     remarkPlugins={[remarkGfm, remarkMath]}
@@ -174,17 +210,17 @@ export function LessonViewer({ courseId, lessonId, onNext }: LessonViewerProps) 
             </div>
 
             {onNext && (
-                <div className="mt-16 pt-8 border-t border-zinc-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex flex-col gap-1 min-w-0">
-                        <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Knowledge Check</span>
-                        <span className="text-sm font-semibold text-zinc-900 truncate">Test your understanding before continuing</span>
+                <div className="mt-24 pt-8 border-t border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                    <div className="flex flex-col gap-2 min-w-0">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Knowledge Check</span>
+                        <span className="text-base font-semibold text-foreground truncate">Ready to test your understanding?</span>
                     </div>
                     <Button
                         onClick={() => onNext(lessonId)}
-                        className="bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm flex items-center gap-2 shrink-0"
+                        className="rounded-none bg-foreground text-background hover:bg-foreground/90 h-12 px-8 font-medium shrink-0"
                     >
                         <span>Take Lesson Quiz</span>
-                        <ArrowRight className="size-4" />
+                        <ArrowRight className="size-4 ml-2" />
                     </Button>
                 </div>
             )}

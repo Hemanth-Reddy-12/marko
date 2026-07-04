@@ -4,10 +4,8 @@ import { fetchApi } from "@/lib/api";
 import { LessonViewer } from "@/features/lesson/components/LessonViewer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, CheckCircle2, Lock, Circle, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
 
 interface CourseHeader {
     id: string;
@@ -22,9 +20,9 @@ interface CourseHeader {
 
 const statusConfig = {
     LOCKED: { icon: Lock, color: "text-muted-foreground/40" },
-    AVAILABLE: { icon: Circle, color: "text-accent" },
-    IN_PROGRESS: { icon: Play, color: "text-amber-500" },
-    COMPLETED: { icon: CheckCircle2, color: "text-emerald-500" },
+    AVAILABLE: { icon: Circle, color: "text-bauhaus-blue" },
+    IN_PROGRESS: { icon: Play, color: "text-bauhaus-yellow" },
+    COMPLETED: { icon: CheckCircle2, color: "text-success" },
 } as const;
 
 export function LessonPage() {
@@ -49,29 +47,29 @@ export function LessonPage() {
     }, [courseId]);
 
     if (!courseId || !lessonId) {
-        return <div className="p-8 text-center text-destructive text-sm">Invalid URL parameters</div>;
+        return <div className="p-12 text-center text-destructive text-sm font-mono uppercase">Invalid URL parameters</div>;
     }
 
     return (
-        <div className="flex flex-1 h-[calc(100vh-3.5rem)] overflow-hidden bg-card border border-border shadow-none rounded-2xl">
+        <div className="flex flex-1 h-[calc(100vh-3.5rem)] overflow-hidden bg-background border-t border-border">
             {/* Sidebar — Curriculum List */}
-            <div className="w-72 border-r border-border bg-muted/20 flex flex-col shrink-0 hidden md:flex">
+            <div className="w-80 border-r border-border bg-card flex flex-col shrink-0 hidden md:flex">
                 {/* Sidebar header */}
-                <div className="p-3 flex items-center gap-2.5 border-b border-border">
+                <div className="p-4 flex items-center gap-4 border-b border-border bg-muted/20">
                     <button
                         onClick={() => navigate(`/courses/${courseId}`)}
-                        className="size-9 rounded-xl flex items-center justify-center hover:bg-muted transition-colors cursor-pointer shrink-0"
+                        className="size-8 rounded-none border border-border bg-card flex items-center justify-center hover:bg-muted transition-colors cursor-pointer shrink-0"
                     >
-                        <ArrowLeft className="size-4 text-muted-foreground" />
+                        <ArrowLeft className="size-4 text-foreground" />
                     </button>
                     <div className="min-w-0 flex-1">
-                        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                        <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1">
                             Curriculum
                         </div>
                         {loading ? (
-                            <Skeleton className="h-3.5 w-28 mt-1" />
+                            <Skeleton className="h-4 w-28 rounded-none" />
                         ) : (
-                            <div className="text-xs font-semibold text-foreground truncate">
+                            <div className="text-sm font-semibold text-foreground truncate">
                                 {course?.title}
                             </div>
                         )}
@@ -79,10 +77,12 @@ export function LessonPage() {
                 </div>
 
                 <ScrollArea className="flex-1">
-                    <div className="p-2 flex flex-col gap-0.5">
+                    <div className="flex flex-col border-b border-border">
                         {loading
                             ? Array.from({ length: 5 }).map((_, i) => (
-                                <Skeleton key={i} className="h-11 w-full rounded-xl" />
+                                <div key={i} className="p-4 border-b border-border last:border-b-0">
+                                    <Skeleton className="h-4 w-full rounded-none" />
+                                </div>
                             ))
                             : course?.lessons.map((lesson, i) => {
                                 const isActive = lesson.id === lessonId;
@@ -90,35 +90,32 @@ export function LessonPage() {
                                 const StatusIcon = statusConfig[lesson.status].icon;
 
                                 const content = (
-                                    <motion.div
-                                        initial={{ opacity: 0, x: -8 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ duration: 0.25, delay: i * 0.04, ease: [0.16, 1, 0.3, 1] }}
+                                    <div
                                         className={cn(
-                                            "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs transition-all duration-200",
+                                            "flex items-center gap-4 px-4 py-4 border-b border-border last:border-b-0 text-sm transition-colors",
                                             isActive
-                                                ? "bg-accent text-white shadow-sm"
-                                                : "hover:bg-muted/60 text-foreground",
-                                            !isClickable && "opacity-40 cursor-not-allowed hover:bg-transparent"
+                                                ? "bg-foreground text-background"
+                                                : "bg-card text-foreground hover:bg-muted/50",
+                                            !isClickable && "opacity-40 cursor-not-allowed hover:bg-card"
                                         )}
                                     >
                                         <StatusIcon
                                             className={cn(
-                                                "size-3.5 shrink-0",
-                                                isActive ? "text-white" : statusConfig[lesson.status].color
+                                                "size-4 shrink-0",
+                                                isActive ? "text-background" : statusConfig[lesson.status].color
                                             )}
                                         />
                                         <div className="flex flex-col min-w-0 flex-1">
-                                            <span className="truncate font-medium leading-tight">
-                                                {lesson.order}. {lesson.title}
+                                            <span className="truncate font-medium">
+                                                {lesson.order.toString().padStart(2, '0')}. {lesson.title}
                                             </span>
                                         </div>
-                                    </motion.div>
+                                    </div>
                                 );
 
                                 if (isClickable) {
                                     return (
-                                        <Link key={lesson.id} to={`/courses/${courseId}/lessons/${lesson.id}`}>
+                                        <Link key={lesson.id} to={`/courses/${courseId}/lessons/${lesson.id}`} className="block">
                                             {content}
                                         </Link>
                                     );
@@ -134,12 +131,12 @@ export function LessonPage() {
             {/* Main Content */}
             <div className="flex-1 flex flex-col h-full bg-card relative min-w-0">
                 {/* Mobile back button */}
-                <div className="md:hidden border-b border-border p-3 flex items-center gap-3">
+                <div className="md:hidden border-b border-border p-4 flex items-center gap-4 bg-muted/20">
                     <button
                         onClick={() => navigate(`/courses/${courseId}`)}
-                        className="size-9 rounded-xl flex items-center justify-center hover:bg-muted transition-colors cursor-pointer"
+                        className="size-8 border border-border bg-card flex items-center justify-center hover:bg-muted transition-colors cursor-pointer"
                     >
-                        <ArrowLeft className="size-4 text-muted-foreground" />
+                        <ArrowLeft className="size-4 text-foreground" />
                     </button>
                     <span className="text-sm font-semibold truncate flex-1 text-foreground">
                         {course?.title || "Loading…"}

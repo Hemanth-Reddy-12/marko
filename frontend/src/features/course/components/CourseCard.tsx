@@ -1,15 +1,16 @@
+import * as React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { BookOpen, Calendar, ChevronRight, Loader2, AlertCircle, Trash2 } from "lucide-react";
+import { BookOpen, Calendar, ChevronRight, Loader2, AlertCircle, Trash2, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export interface Lesson {
     id: string;
     title: string;
     order: number;
+    estimateTime: number;
     status: "LOCKED" | "AVAILABLE" | "IN_PROGRESS" | "COMPLETED";
 }
 
@@ -18,10 +19,19 @@ export interface Course {
     title: string;
     description: string | null;
     durationDays: number;
-    status: "GENERATING" | "ACTIVE" | "COMPLETED" | "FAILED";
+    estimateTime: number;
+    status: "GENERATING" | "ACTIVE" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
     lessons: Lesson[];
     createdAt: string;
 }
+
+const courseStatusConfig: Record<Course["status"], { label: string; className: string }> = {
+    GENERATING: { label: "Generating", className: "text-muted-foreground" },
+    ACTIVE: { label: "Active", className: "text-muted-foreground" },
+    IN_PROGRESS: { label: "In Progress", className: "bg-bauhaus-blue/15 text-bauhaus-blue" },
+    COMPLETED: { label: "Completed", className: "bg-success/15 text-success" },
+    FAILED: { label: "Failed", className: "bg-destructive/15 text-destructive" },
+};
 
 interface CourseCardProps {
     course: Course;
@@ -29,134 +39,104 @@ interface CourseCardProps {
     onDeleteCourse?: (courseId: string) => void;
 }
 
-export function CourseCard({ course, onViewCourse, onDeleteCourse }: CourseCardProps) {
+export function CourseCard({ course, onViewCourse }: CourseCardProps) {
     const isGenerating = course.status === "GENERATING";
     const isFailed = course.status === "FAILED";
+    const statusBadge = courseStatusConfig[course.status] ?? courseStatusConfig.ACTIVE;
 
     const completedLessons = course.lessons?.filter(l => l.status === "COMPLETED").length || 0;
     const totalLessons = course.lessons?.length || 0;
     const progressPercent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
+    const totalMins = course.lessons?.reduce((acc, l) => acc + (l.estimateTime || 0), 0) || course.estimateTime || 0;
+    const formatEstimateTime = (mins: number) => {
+        if (mins >= 1440) {
+            const days = mins / 1440;
+            return `${days % 1 === 0 ? days : days.toFixed(1)} Days`;
+        }
+        return `${mins} Mins`;
+    };
+
     return (
         <Card className={cn(
-            "bg-white border border-zinc-200/80 shadow-none rounded-xl overflow-hidden transition-all duration-200 hover:border-zinc-300 hover:shadow-sm flex flex-col h-full relative",
-            isGenerating && "border-zinc-200/50 bg-zinc-50/20"
-        )}>
+            "bg-card bauhaus-border shadow-none rounded-none overflow-hidden transition-all duration-200 flex flex-col h-full relative cursor-pointer hover:-translate-y-1 hover:translate-x-1 hover:bauhaus-shadow",
+            isGenerating && "opacity-80 pointer-events-none"
+        )} onClick={() => !isGenerating && onViewCourse(course.id)}>
             {isGenerating && (
-                <div className="absolute inset-0 bg-white/60 backdrop-blur-xs flex flex-col items-center justify-center z-10 gap-2.5 p-4 text-center">
-                    <Loader2 className="h-5 w-5 text-zinc-900 animate-spin" />
-                    <div className="flex flex-col gap-0.5">
-                        <p className="text-xs font-semibold text-zinc-900">Planning Course Outline...</p>
-                        <p className="text-[10px] text-zinc-500 font-normal">This will take a few seconds</p>
+                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center z-10 gap-3 p-4 text-center">
+                    <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                    <div className="flex flex-col gap-1">
+                        <p className="text-xs font-semibold text-foreground uppercase tracking-widest">Generating Course</p>
                     </div>
                 </div>
             )}
 
-            <CardHeader className="p-5 pb-0 flex flex-col gap-2">
-                {/* Header: Badges & Duration */}
+            <CardHeader className="p-5 pb-0 flex flex-col gap-3">
                 <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 text-zinc-500 font-medium text-[10px] uppercase tracking-wider">
-                        <Calendar className="size-3" />
-                        <span>{course.durationDays} Days</span>
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5 text-muted-foreground font-mono text-[10px] uppercase tracking-widest">
+                            <Clock className="size-3" />
+                            <span>{formatEstimateTime(totalMins)}</span>
+                        </div>
                     </div>
                     <div className="flex items-center gap-2">
                         <Badge 
-                            variant={isFailed ? "destructive" : course.status === "COMPLETED" ? "default" : "secondary"}
-                            className="text-[9px] font-bold tracking-wide uppercase px-2 py-0.5 rounded-full"
+                            variant={isFailed ? "destructive" : "secondary"}
+                            className={cn("text-[10px] font-medium tracking-widest uppercase px-2 py-0.5 rounded-none", statusBadge.className)}
                         >
-                            {course.status}
+                            {statusBadge.label}
                         </Badge>
-                        {onDeleteCourse && (
-                            <AlertDialog>
-                                <AlertDialogTrigger 
-                                    render={
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="size-6 text-zinc-400 hover:text-red-500 hover:bg-red-50"
-                                            onClick={(e) => e.stopPropagation()}
-                                        />
-                                    }
-                                >
-                                    <Trash2 className="size-3.5" />
-                                </AlertDialogTrigger>
-                                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Delete Course</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            Are you sure you want to delete this course? This action cannot be undone and will permanently remove all lessons and progress.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction 
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onDeleteCourse(course.id);
-                                            }}
-                                            className="bg-red-600 hover:bg-red-700 text-white"
-                                        >
-                                            Delete
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        )}
                     </div>
                 </div>
 
-                {/* Title & Description */}
-                <div className="flex flex-col gap-1">
-                    <CardTitle className="text-sm font-bold text-zinc-900 line-clamp-1 leading-snug">
+                <div className="flex flex-col gap-1 mt-1">
+                    <CardTitle className="text-lg font-heading font-bold text-foreground line-clamp-1 leading-snug uppercase tracking-tight">
                         {course.title}
                     </CardTitle>
-                    <CardDescription className="text-xs text-zinc-500 font-normal line-clamp-2 leading-relaxed">
+                    <CardDescription className="text-xs text-muted-foreground line-clamp-2 leading-relaxed font-medium">
                         {course.description || "No description provided."}
                     </CardDescription>
                 </div>
             </CardHeader>
 
-            <CardContent className="p-5 pt-4 flex-1 flex flex-col justify-end gap-4">
+            <CardContent className="p-5 flex-1 flex flex-col justify-end gap-4">
                 {isFailed ? (
-                    <div className="flex items-center gap-1.5 text-xs text-red-600 bg-red-50 p-2 rounded-lg border border-red-100">
+                    <div className="flex items-center gap-1.5 text-xs text-destructive bg-destructive/10 p-2 rounded-none border border-destructive/20 mt-4">
                         <AlertCircle className="size-4 shrink-0" />
                         <span>Generation failed. Delete and try again.</span>
                     </div>
                 ) : (
-                    <div className="flex flex-col gap-3">
-                        {/* Progress */}
-                        <div className="flex flex-col gap-1">
-                            <div className="flex items-center justify-between text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">
-                                <span>Curriculum Progress</span>
-                                <span className="text-zinc-700 font-bold tabular-nums">
-                                    {completedLessons}/{totalLessons} Lessons ({progressPercent}%)
+                    <div className="flex flex-col gap-4 mt-2">
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center justify-between text-[10px] font-medium text-foreground uppercase tracking-widest">
+                                <span>Progress</span>
+                                <span className="font-mono text-muted-foreground">
+                                    {progressPercent}%
                                 </span>
                             </div>
-                            <Progress value={progressPercent} className="h-1 bg-zinc-100">
-                                <div 
-                                    className="h-full bg-zinc-900 transition-all rounded-full" 
-                                    style={{ width: `${progressPercent}%` }} 
-                                />
-                            </Progress>
+                            <Progress value={progressPercent} className="h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-none [&>div]:bg-bauhaus-blue dark:[&>div]:bg-sky-400" />
                         </div>
 
-                        {/* Lessons preview (small preview of the next lesson or first lesson) */}
                         {course.lessons && course.lessons.length > 0 && (
-                            <div className="border-t border-zinc-100 pt-3 flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-1.5 min-w-0">
-                                    <BookOpen className="size-3.5 text-zinc-400 shrink-0" />
-                                    <span className="text-[11px] text-zinc-600 font-medium truncate">
-                                        Next: {course.lessons.find(l => l.status === "AVAILABLE" || l.status === "IN_PROGRESS")?.title || course.lessons[0].title}
+                            <div className="border-t border-border pt-4 flex items-center justify-between gap-4 mt-1">
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <BookOpen className="size-3.5 text-muted-foreground shrink-0" />
+                                    <span className="text-[10px] text-muted-foreground font-medium uppercase truncate">
+                                        {course.lessons.every(l => l.status === "COMPLETED")
+                                            ? "Next: Interview"
+                                            : `Next: ${course.lessons.find(l => l.status === "AVAILABLE" || l.status === "IN_PROGRESS")?.title || course.lessons[0]?.title}`}
                                     </span>
                                 </div>
                                 <Button 
                                     size="sm" 
-                                    variant="outline"
-                                    onClick={() => onViewCourse(course.id)}
-                                    className="h-7 text-[10px] font-bold text-zinc-800 border-zinc-200 hover:bg-zinc-50 bg-white shrink-0 px-2 flex items-center gap-0.5"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onViewCourse(course.id);
+                                    }}
+                                    className="rounded-none bg-bauhaus-yellow text-black hover:bg-bauhaus-yellow/90 text-xs font-bold uppercase tracking-widest h-8 px-4 bauhaus-border hover:bauhaus-shadow hover:-translate-y-0.5 hover:translate-x-0.5 transition-all"
                                 >
                                     <span>Learn</span>
-                                    <ChevronRight data-icon="inline-end" />
+                                    <ChevronRight className="size-3 ml-1" />
                                 </Button>
                             </div>
                         )}

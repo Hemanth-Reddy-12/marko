@@ -5,6 +5,13 @@ export const fetchLesson = async (courseId: string, lessonId: string): Promise<L
     return fetchApi<LessonResponse>(`/api/courses/${courseId}/lessons/${lessonId}`);
 };
 
+export const regenerateLesson = async (courseId: string, lessonId: string): Promise<void> => {
+    await fetchApi<{ status: string; message: string }>(
+        `/api/courses/${courseId}/lessons/${lessonId}/regenerate`,
+        { method: "POST" }
+    );
+};
+
 export const pollLesson = async (
     courseId: string, 
     lessonId: string, 

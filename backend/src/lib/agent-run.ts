@@ -46,7 +46,15 @@ export async function runAgent<T>(
     });
 
     try {
+        console.log(`\n[AI] 🚀 Triggering Agent: ${context.agent}`);
+        console.log(`[AI] Provider: ${provider.info.name} | Model: ${provider.info.model}`);
+        console.log(`[AI] Checking responsiveness... Waiting for response...`);
+        const startTime = Date.now();
+
         const result = await provider.generateStructured<T>(req, schema, schemaName);
+
+        const endTime = Date.now();
+        console.log(`[AI] ✅ Success! Response received in ${((endTime - startTime) / 1000).toFixed(2)}s`);
 
         // Update SUCCESS state
         await prisma.agentRun.update({
@@ -60,6 +68,7 @@ export async function runAgent<T>(
 
         return result;
     } catch (error) {
+        console.error(`[AI] ❌ Request failed! Error:`, error);
         // Update FAILED state
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
         await prisma.agentRun.update({

@@ -1,36 +1,72 @@
-import { Radio as RadioPrimitive } from "@base-ui/react/radio"
-import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group"
-
+import * as React from "react"
 import { cn } from "@/lib/utils"
 
-function RadioGroup({ className, ...props }: RadioGroupPrimitive.Props) {
-  return (
-    <RadioGroupPrimitive
-      data-slot="radio-group"
-      className={cn("grid w-full gap-2", className)}
-      {...props}
-    />
-  )
+interface RadioGroupContextValue {
+    name: string | undefined
+    value: string
+    disabled: boolean
+    onChange: (val: string) => void
 }
 
-function RadioGroupItem({ className, ...props }: RadioPrimitive.Root.Props) {
-  return (
-    <RadioPrimitive.Root
-      data-slot="radio-group-item"
-      className={cn(
-        "group/radio-group-item peer relative flex aspect-square size-4 shrink-0 rounded-full border border-input outline-none after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 aria-invalid:aria-checked:border-primary dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground dark:data-checked:bg-primary",
-        className
-      )}
-      {...props}
-    >
-      <RadioPrimitive.Indicator
-        data-slot="radio-group-indicator"
-        className="flex size-4 items-center justify-center"
-      >
-        <span className="absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-foreground" />
-      </RadioPrimitive.Indicator>
-    </RadioPrimitive.Root>
-  )
-}
+const RadioGroupContext = React.createContext<RadioGroupContextValue | null>(null)
+
+const RadioGroup = React.forwardRef<
+    HTMLDivElement,
+    React.HTMLAttributes<HTMLDivElement> & {
+        value?: string
+        onValueChange?: (val: string) => void
+        name?: string
+        disabled?: boolean
+    }
+>(({ className, value, onValueChange, name, disabled = false, ...props }, ref) => {
+    const ctx = React.useMemo<RadioGroupContextValue>(
+        () => ({
+            name,
+            value: value ?? "",
+            disabled,
+            onChange: (v: string) => onValueChange?.(v),
+        }),
+        [name, value, disabled, onValueChange],
+    )
+
+    return (
+        <RadioGroupContext.Provider value={ctx}>
+            <div ref={ref} className={cn("grid gap-2", className)} {...props} />
+        </RadioGroupContext.Provider>
+    )
+})
+RadioGroup.displayName = "RadioGroup"
+
+const RadioGroupItem = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
+    ({ className, value, checked, defaultChecked, onChange: onChangeProp, name: nameProp, disabled: disabledProp, ...props }, ref) => {
+        const ctx = React.useContext(RadioGroupContext)
+        const isChecked = ctx ? ctx.value === String(value) : checked
+        const groupName = ctx?.name ?? nameProp
+        const isDisabled = ctx?.disabled || disabledProp
+
+        return (
+            <input
+                ref={ref}
+                type="radio"
+                value={value}
+                checked={isChecked}
+                disabled={isDisabled}
+                name={groupName}
+                onChange={(e) => {
+                    onChangeProp?.(e)
+                    if (e.target.checked && ctx) {
+                        ctx.onChange(String(value))
+                    }
+                }}
+                className={cn(
+                    "aspect-square h-4 w-4 rounded-full border border-primary text-primary shadow focus:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+                    className,
+                )}
+                {...props}
+            />
+        )
+    },
+)
+RadioGroupItem.displayName = "RadioGroupItem"
 
 export { RadioGroup, RadioGroupItem }

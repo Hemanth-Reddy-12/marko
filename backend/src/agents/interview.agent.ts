@@ -1,6 +1,6 @@
 import { runAgent } from "../lib/agent-run.js";
 import { AgentType } from "../generated/prisma/index.js";
-import { interviewGenerateSystemPrompt, getInterviewGenerateUserPrompt, interviewEvaluateSystemPrompt } from "./prompts/interview.prompt.js";
+import { interviewGenerateSystemPrompt, getInterviewGenerateUserPrompt, getInterviewEvaluateSystemPrompt } from "./prompts/interview.prompt.js";
 
 export interface InterviewGenerateInput {
     courseId: string;
@@ -64,7 +64,11 @@ export async function generateInterviewPlan(input: InterviewGenerateInput): Prom
 export interface InterviewEvaluateInput {
     courseId: string;
     userId: string;
+    studentName: string;
+    courseTitle: string;
+    courseDescription: string | null;
     chatHistory: { role: "system" | "user" | "assistant"; content: string }[];
+    milestones: Milestone[];
 }
 
 export interface InterviewEvaluateOutput {
@@ -104,9 +108,8 @@ export async function evaluateInterview(input: InterviewEvaluateInput): Promise<
     };
 
     const messages = [
-        { role: "system", content: interviewEvaluateSystemPrompt },
-        // Cast input.chatHistory so TS is happy if needed, though structure matches loosely.
-        ...input.chatHistory as any[]
+        { role: "system" as const, content: getInterviewEvaluateSystemPrompt(input.milestones, input.studentName, input.courseTitle, input.courseDescription) },
+        ...input.chatHistory.map(m => ({ role: m.role as "system" | "user" | "assistant", content: m.content })),
     ];
 
     return runAgent<InterviewEvaluateOutput>(

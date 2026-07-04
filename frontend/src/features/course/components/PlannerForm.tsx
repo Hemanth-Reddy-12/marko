@@ -6,7 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import { FieldGroup, Field, FieldLabel, FieldDescription, FieldError } from "@/components/ui/field";
 import { fetchApi } from "@/lib/api";
-import { Sparkles, AlertCircle } from "lucide-react";
+import { AlertCircle, ArrowRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface PlannerFormProps {
     isOpen: boolean;
@@ -57,91 +58,96 @@ export function PlannerForm({ isOpen, onClose, onCourseCreated }: PlannerFormPro
     const displayError = hasGoalError ? error?.substring(5) : error;
 
     return (
-        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="sm:max-w-md bg-white border border-zinc-200 shadow-lg rounded-xl">
-                <DialogHeader className="flex flex-col gap-1.5 p-1">
-                    <DialogTitle className="text-zinc-900 font-bold flex items-center gap-1.5 text-lg">
-                        <Sparkles className="size-4.5 text-zinc-900 fill-zinc-900/10" />
-                        <span>Create Custom Course</span>
+        <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
+            <DialogContent className="sm:max-w-xl bg-card bauhaus-border rounded-none p-0 overflow-hidden gap-0">
+                <div className="bg-bauhaus-red/10 border-b-2 border-foreground p-6 sm:p-8 flex flex-col gap-2">
+                    <DialogTitle className="font-heading font-bold uppercase tracking-tight text-foreground flex items-center gap-3 text-2xl">
+                        <div className="size-4 bg-bauhaus-red bauhaus-circle"></div>
+                        <span>Create Course</span>
                     </DialogTitle>
-                    <DialogDescription className="text-zinc-500 font-normal text-xs leading-relaxed">
-                        Specify what you want to learn and the duration. Our AI Planner will draft your personalized curriculum dynamically.
+                    <DialogDescription className="text-muted-foreground font-medium text-sm">
+                        Define your learning objective and timeline.
                     </DialogDescription>
-                </DialogHeader>
+                </div>
 
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4 py-2">
+                <form onSubmit={handleSubmit} className="flex flex-col p-6 sm:p-8 gap-8">
                     {error && !hasGoalError && (
-                        <div className="text-xs font-semibold text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-100 flex items-center gap-1.5">
+                        <div className="text-xs font-bold uppercase tracking-widest text-bauhaus-red bg-bauhaus-red/10 p-3 flex items-center gap-2 bauhaus-border">
                             <AlertCircle className="size-4 shrink-0" />
                             <span>{displayError}</span>
                         </div>
                     )}
 
-                    <FieldGroup>
+                    <FieldGroup className="gap-6">
                         <Field data-invalid={hasGoalError || undefined}>
-                            <FieldLabel htmlFor="goal" className="text-xs font-semibold text-zinc-700">
+                            <FieldLabel htmlFor="goal" className="text-xs font-bold text-foreground uppercase tracking-widest">
                                 Learning Goal
                             </FieldLabel>
                             <Textarea
                                 id="goal"
-                                placeholder="e.g., Master Docker, Kubernetes container orchestration, and Helm charts for cloud-native apps."
+                                placeholder="E.g., Master Docker and Kubernetes..."
                                 value={goal}
                                 onChange={(e) => setGoal(e.target.value)}
                                 disabled={loading}
                                 required
                                 aria-invalid={hasGoalError || undefined}
-                                className="bg-zinc-50/50 border-zinc-200/80 focus-visible:ring-zinc-900 focus-visible:border-zinc-900 text-xs font-normal"
+                                className={cn(
+                                    "bg-background bauhaus-border rounded-none focus-visible:ring-0 focus-visible:border-foreground text-base font-medium p-4 resize-none h-32",
+                                    hasGoalError && "border-bauhaus-red bg-bauhaus-red/5"
+                                )}
                             />
-                            <FieldDescription>
-                                What topic or skill do you want to learn?
+                            <FieldDescription className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mt-2">
+                                Be specific about the skills you want to acquire.
                             </FieldDescription>
                             {hasGoalError && (
-                                <FieldError>{displayError}</FieldError>
+                                <FieldError className="text-bauhaus-red font-bold uppercase text-[10px] tracking-widest mt-1">{displayError}</FieldError>
                             )}
                         </Field>
 
                         <Field>
-                            <FieldLabel htmlFor="duration" className="text-xs font-semibold text-zinc-700">
+                            <FieldLabel htmlFor="duration" className="text-xs font-bold text-foreground uppercase tracking-widest">
                                 Duration (Days)
                             </FieldLabel>
                             <div className="flex items-center gap-4">
                                 <Input
                                     id="duration"
                                     type="number"
+                                    min={1}
+                                    max={90}
                                     value={durationDays}
                                     onChange={(e) => setDurationDays(Number(e.target.value))}
                                     disabled={loading}
                                     required
-                                    className="w-24 bg-zinc-50/50 border-zinc-200/80 focus-visible:ring-zinc-900 focus-visible:border-zinc-900 text-xs font-semibold"
+                                    className="w-24 bg-background bauhaus-border rounded-none focus-visible:ring-0 focus-visible:border-foreground text-base font-bold text-center h-12"
                                 />
+                                <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Days</span>
                             </div>
                         </Field>
                     </FieldGroup>
 
-                    <DialogFooter className="pt-2">
-                        <Button
+                    <DialogFooter className="pt-4 flex flex-row gap-4 justify-end items-center border-t-2 border-foreground/10">
+                        <button
                             type="button"
-                            variant="outline"
                             onClick={onClose}
                             disabled={loading}
-                            className="text-xs font-semibold text-zinc-600 border-zinc-200 bg-white hover:bg-zinc-50"
+                            className="text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors px-4 py-2"
                         >
                             Cancel
-                        </Button>
+                        </button>
                         <Button
                             type="submit"
                             disabled={loading}
-                            className="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold flex items-center"
+                            className="rounded-none bg-bauhaus-red text-white hover:bg-bauhaus-red/90 font-bold uppercase tracking-widest text-xs px-8 h-12 bauhaus-border hover:bauhaus-shadow hover:-translate-y-1 hover:translate-x-1 transition-all flex items-center gap-2"
                         >
                             {loading ? (
                                 <>
-                                    <Spinner data-icon="inline-start" className="text-white animate-spin" />
-                                    Generating Curriculum...
+                                    <Spinner data-icon="inline-start" className="text-white animate-spin size-4" />
+                                    <span>Planning...</span>
                                 </>
                             ) : (
                                 <>
-                                    <Sparkles data-icon="inline-start" />
-                                    Generate Course
+                                    <span>Generate</span>
+                                    <ArrowRight className="size-4" />
                                 </>
                             )}
                         </Button>

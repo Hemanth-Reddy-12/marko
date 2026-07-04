@@ -3,6 +3,7 @@ import prisma from "../../config/db.js";
 import { runPlannerAgent } from "../../agents/planner.agent.js";
 import { createCourseSchema } from "./course.validate.js";
 import { CourseStatus, LessonStatus, GenerationStatus } from "../../generated/prisma/index.js";
+import { sendNotification } from "../notification/notification.service.js";
 
 export async function createCourse(
     req: Request,
@@ -45,14 +46,27 @@ export async function createCourse(
             try {
                 // 3. Write lessons and update course in a quick transaction
                 await prisma.$transaction(async (tx) => {
-                    const lessonsData = planned.lessons.map((lesson) => ({
-                        title: lesson.title,
-                        order: lesson.order,
-                        weight: lesson.weight || "medium",
-                        status: lesson.order === 1 ? LessonStatus.AVAILABLE : LessonStatus.LOCKED,
-                        generationStatus: GenerationStatus.NOT_GENERATED,
-                        courseId: course.id,
-                    }));
+                    const numLessons = planned.lessons.length;
+                    const lessonsPerDay = Math.ceil(numLessons / Math.max(course.durationDays, 1));
+                    
+                    const lessonsData = planned.lessons.map((lesson, index) => {
+                        const dayOffset = Math.floor(index / lessonsPerDay);
+                        const scheduledDate = new Date();
+                        scheduledDate.setDate(scheduledDate.getDate() + dayOffset);
+                        // Zero out the time to make it a pure date
+                        scheduledDate.setHours(0, 0, 0, 0);
+
+                        return {
+                            title: lesson.title,
+                            order: lesson.order,
+                            weight: lesson.weight || "medium",
+                            estimateTime: lesson.estimateTime || 0,
+                            scheduledDate: scheduledDate,
+                            status: lesson.order === 1 ? LessonStatus.AVAILABLE : LessonStatus.LOCKED,
+                            generationStatus: GenerationStatus.NOT_GENERATED,
+                            courseId: course.id,
+                        };
+                    });
 
                     await tx.lesson.createMany({
                         data: lessonsData,
@@ -64,16 +78,29 @@ export async function createCourse(
                         data: {
                             title: planned.title,
                             description: planned.description,
+                            estimateTime: planned.estimateTime || 0,
                             status: CourseStatus.ACTIVE,
                         }
                     });
                 });
+
+                // Send notification to user that course is generated
+                await sendNotification(
+                    userId,
+                    "Course Ready",
+                    `Your course "${planned.title}" has been generated and is ready to start!`
+                );
             } catch (txError: any) {
                 console.error("Failed to commit course planning transaction:", txError);
                 await prisma.course.update({
                     where: { id: course.id },
                     data: { status: CourseStatus.FAILED, description: `Failed to commit course plan: ${txError.message || 'Unknown error'}` }
                 });
+                await sendNotification(
+                    userId,
+                    "Course Generation Failed",
+                    `Failed to commit the generated plan for your course: "${planned.title || goal}".`
+                );
             }
         }).catch(async (error: any) => {
             console.error("Course planning agent failed:", error);
@@ -81,6 +108,11 @@ export async function createCourse(
                 where: { id: course.id },
                 data: { status: CourseStatus.FAILED, description: `Course generation failed: ${error.message || 'Unknown error'}` }
             });
+            await sendNotification(
+                userId,
+                "Course Generation Failed",
+                `We couldn't generate the course outline for: "${goal}".`
+            );
         });
 
         res.status(201).json(course);
@@ -149,6 +181,12 @@ export async function getCourse(
             res.status(403).json({ error: "Forbidden" });
             return;
         }
+
+        // Fire and forget update for lastVisitedAt
+        prisma.course.update({
+            where: { id: courseId },
+            data: { lastVisitedAt: new Date() }
+        }).catch(err => console.error("Failed to update lastVisitedAt:", err));
 
         res.json(course);
     } catch (error) {

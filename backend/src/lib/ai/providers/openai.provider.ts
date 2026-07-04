@@ -80,22 +80,31 @@ export class OpenAIProvider implements ChatProvider {
         schemaName = "output"
     ): Promise<T> {
         const client = this.getClient();
+        
+        // Append schema instruction to the first system message or add a new one
+        const messages = [...req.messages];
+        const schemaInstruction = `\n\nYou MUST return your response as a valid JSON object matching this JSON Schema:\n${JSON.stringify(schema, null, 2)}`;
+        
+        const firstSystemMessageIndex = messages.findIndex(m => m.role === "system");
+        if (firstSystemMessageIndex >= 0) {
+            const systemMessage = messages[firstSystemMessageIndex]!;
+            messages[firstSystemMessageIndex] = {
+                role: systemMessage.role,
+                content: systemMessage.content + schemaInstruction
+            };
+        } else {
+            messages.unshift({ role: "system", content: schemaInstruction });
+        }
+
         const body: OpenAI.ChatCompletionCreateParamsNonStreaming = {
             model: req.model ?? env.OPENAI_MODEL,
-            messages: req.messages.map(
+            messages: messages.map(
                 (m): OpenAI.ChatCompletionMessageParam => ({
                     role: m.role,
                     content: m.content,
                 }),
             ),
-            response_format: {
-                type: "json_schema",
-                json_schema: {
-                    name: schemaName,
-                    strict: true,
-                    schema: schema,
-                },
-            },
+            response_format: { type: "json_object" },
         };
         if (req.temperature !== undefined) {
             body.temperature = req.temperature;

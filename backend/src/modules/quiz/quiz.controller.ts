@@ -5,6 +5,7 @@ import { attemptQuizSchema } from "./quiz.validate.js";
 import { runQuizAgent } from "../../agents/quiz.agent.js";
 import { QuizStatus, LessonStatus } from "../../generated/prisma/index.js";
 import type { Question } from "./quiz.types.js";
+import { sendNotification } from "../notification/notification.service.js";
 
 export async function getQuiz(
     req: Request,
@@ -131,6 +132,11 @@ export async function getQuiz(
                             status: QuizStatus.GENERATED,
                         },
                     });
+                    await sendNotification(
+                        userId,
+                        "Quiz Ready",
+                        `The quiz for lesson "${lesson.title}" is now ready!`
+                    );
                 })
                 .catch(async (error) => {
                     console.error("Quiz Agent failed:", error);
@@ -140,6 +146,11 @@ export async function getQuiz(
                             status: QuizStatus.FAILED,
                         },
                     });
+                    await sendNotification(
+                        userId,
+                        "Quiz Generation Failed",
+                        `We couldn't generate the quiz for: "${lesson.title}".`
+                    );
                 });
         }
 
@@ -258,6 +269,20 @@ export async function attemptQuiz(
                 });
             }
         });
+
+        if (passed) {
+            sendNotification(
+                userId,
+                "Quiz Passed! 🎉",
+                `Congratulations! You passed the quiz for "${lesson.title}" with a score of ${Math.round(score * 100)}%.`
+            ).catch(err => console.error("Failed to send quiz pass notification:", err));
+        } else {
+            sendNotification(
+                userId,
+                "Quiz Failed",
+                `You scored ${Math.round(score * 100)}% on the quiz for "${lesson.title}". Try again when you're ready.`
+            ).catch(err => console.error("Failed to send quiz fail notification:", err));
+        }
 
         res.json({
             attempt,

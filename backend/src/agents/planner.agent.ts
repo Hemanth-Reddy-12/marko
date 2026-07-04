@@ -13,11 +13,13 @@ export interface PlannedLesson {
     title: string;
     order: number;
     weight: "light" | "medium" | "heavy";
+    estimateTime: number;
 }
 
 export interface PlannerOutput {
     title: string;
     description: string;
+    estimateTime: number;
     lessons: PlannedLesson[];
 }
 
@@ -31,6 +33,10 @@ const PLANNER_SCHEMA = {
         description: {
             type: "string",
             description: "A summary of what the course covers and its objectives",
+        },
+        estimateTime: {
+            type: "integer",
+            description: "The estimated total duration of the course in minutes",
         },
         lessons: {
             type: "array",
@@ -50,14 +56,18 @@ const PLANNER_SCHEMA = {
                         enum: ["light", "medium", "heavy"],
                         description: "The complexity/importance weight of the lesson (light = basics/introduction, medium = core standard topics, heavy = advanced/comprehensive/capstone topics)",
                     },
+                    estimateTime: {
+                        type: "integer",
+                        description: "The estimated duration of this specific lesson in minutes",
+                    },
                 },
-                required: ["title", "order", "weight"],
+                required: ["title", "order", "weight", "estimateTime"],
                 additionalProperties: false,
             },
             description: "The list of lessons in chronological order",
         },
     },
-    required: ["title", "description", "lessons"],
+    required: ["title", "description", "estimateTime", "lessons"],
     additionalProperties: false,
 };
 

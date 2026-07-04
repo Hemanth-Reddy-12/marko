@@ -65,3 +65,31 @@ export const initInterview = async (req: Request, res: Response, next: NextFunct
         next(error);
     }
 };
+
+export const getInterviews = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const userId = (req as any).user?.id;
+        if (!userId) {
+            res.status(401).json({ error: "Unauthorized" });
+            return;
+        }
+
+        const interviews = await prisma.interview.findMany({
+            where: { userId },
+            include: {
+                course: {
+                    select: {
+                        title: true,
+                        description: true,
+                        status: true
+                    }
+                }
+            },
+            orderBy: { createdAt: "desc" }
+        });
+
+        res.json(interviews);
+    } catch (error) {
+        next(error);
+    }
+};

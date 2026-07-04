@@ -38,5 +38,5 @@ export function useWebSocket(sessionId: string | null) {
         };
     }, [sessionId, user?.id]);
 
-    return { socket, isConnected };
+    return { socket, isConnected, userId: user?.id };
 }

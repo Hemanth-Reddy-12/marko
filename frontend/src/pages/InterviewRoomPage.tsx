@@ -43,20 +43,20 @@ export function InterviewRoomPage() {
         return (
             <div className="flex items-center justify-center h-dvh bg-background p-4">
                 <motion.div
-                    className="flex flex-col items-center gap-6 max-w-md w-full text-center"
+                    className="flex flex-col items-center gap-6 max-w-md w-full text-center border border-border bg-card p-12"
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
                 >
-                    <div className="size-14 rounded-2xl bg-destructive/10 flex items-center justify-center">
-                        <BrainCircuit className="size-7 text-destructive" />
+                    <div className="size-16 border border-border bg-muted/20 flex items-center justify-center">
+                        <BrainCircuit className="size-8 text-destructive" />
                     </div>
                     <div>
-                        <h2 className="text-lg font-bold text-foreground mb-2">Interview failed to start</h2>
+                        <h2 className="text-xl font-heading font-semibold text-foreground mb-2">Interview failed to start</h2>
                         <p className="text-sm text-muted-foreground">{error}</p>
                     </div>
-                    <Button onClick={() => navigate(-1)} variant="outline" className="gap-2">
-                        <ArrowLeft className="size-4" />
+                    <Button onClick={() => navigate(-1)} variant="outline" className="rounded-none mt-4">
+                        <ArrowLeft className="size-4 mr-2" />
                         Go back
                     </Button>
                 </motion.div>
@@ -68,22 +68,25 @@ export function InterviewRoomPage() {
         return (
             <div className="flex flex-col items-center justify-center h-dvh gap-4 bg-background">
                 <motion.div
-                    className="flex flex-col items-center gap-4"
+                    className="flex flex-col items-center gap-6"
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3 }}
                 >
-                    <div className="size-14 rounded-2xl bg-accent/10 flex items-center justify-center">
+                    <div className="size-16 border border-border bg-muted/20 flex items-center justify-center">
                         <motion.div
                             animate={{ rotate: 360 }}
                             transition={{ repeat: Infinity, duration: 1.4, ease: "linear" }}
                         >
-                            <BrainCircuit className="size-7 text-accent" />
+                            <BrainCircuit className="size-8 text-bauhaus-blue" />
                         </motion.div>
                     </div>
-                    <div className="text-center">
-                        <p className="text-sm font-semibold text-foreground">Preparing your interview</p>
-                        <p className="text-xs text-muted-foreground mt-1 animate-pulse">Loading milestones…</p>
+                    <div className="text-center flex flex-col gap-2">
+                        <p className="text-sm font-heading font-semibold text-foreground uppercase tracking-widest">Preparing your interview</p>
+                        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground animate-pulse">
+                            <div className="size-1.5 bg-bauhaus-blue rounded-none" />
+                            Loading milestones…
+                        </div>
                     </div>
                 </motion.div>
             </div>
@@ -94,53 +97,51 @@ export function InterviewRoomPage() {
         return (
             <div className="flex items-center justify-center h-dvh bg-background p-4">
                 <motion.div
-                    className="flex flex-col items-center gap-6 max-w-lg w-full text-center"
+                    className="flex flex-col items-center gap-8 max-w-xl w-full text-center border border-border bg-card p-12"
                     initial={{ opacity: 0, y: 20, scale: 0.97 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                 >
-                    <div className="size-16 rounded-2xl bg-accent/10 flex items-center justify-center">
-                        <BrainCircuit className="size-8 text-accent" />
+                    <div className="size-16 border border-border bg-muted/20 flex items-center justify-center mb-2">
+                        <BrainCircuit className="size-8 text-bauhaus-blue" />
                     </div>
 
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-foreground mb-2">
+                    <div className="flex flex-col gap-3">
+                        <h1 className="text-3xl md:text-4xl font-heading font-semibold tracking-tight text-foreground">
                             Capstone Examination
                         </h1>
-                        <p className="text-sm text-muted-foreground leading-relaxed max-w-sm mx-auto">
+                        <p className="text-base text-muted-foreground leading-relaxed max-w-md mx-auto">
                             This is a live oral examination. The environment requires your full
-                            attention — please enter fullscreen mode to begin.
+                            attention. Please enter fullscreen mode to begin.
                         </p>
                     </div>
 
-                    <div className="flex flex-col items-center gap-3 w-full max-w-xs">
+                    <div className="flex flex-col items-center gap-4 w-full max-w-sm mt-4">
                         <Button
                             onClick={handleEnterFullscreen}
-                            size="lg"
-                            className="w-full bg-accent hover:bg-accent/90 text-white shadow-sm gap-2 text-sm font-semibold"
+                            className="w-full rounded-none bg-foreground text-background hover:bg-foreground/90 h-14 font-semibold text-sm tracking-wide"
                         >
-                            <Maximize className="size-4" />
-                            Enter Interview Environment
+                            <Maximize className="size-4 mr-2" />
+                            ENTER INTERVIEW ENVIRONMENT
                         </Button>
                         <Button
                             onClick={() => navigate(-1)}
-                            variant="ghost"
-                            size="sm"
-                            className="text-muted-foreground hover:text-foreground gap-1.5"
+                            variant="outline"
+                            className="w-full rounded-none h-14 text-muted-foreground hover:text-foreground font-medium text-sm"
                         >
-                            <ArrowLeft className="size-3.5" />
+                            <ArrowLeft className="size-4 mr-2" />
                             Return to course
                         </Button>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3 w-full max-w-sm pt-2">
+                    <div className="grid grid-cols-3 gap-px w-full max-w-md mt-6 bg-border border border-border">
                         {[
                             { label: "Live AI", desc: "Real-time evaluation" },
                             { label: "Oral Format", desc: "Type your answers" },
                             { label: "Instant Score", desc: "Results on completion" },
                         ].map((item) => (
-                            <div key={item.label} className="flex flex-col items-center gap-1 p-3 rounded-xl bg-muted/50 border border-border/50">
-                                <span className="text-xs font-bold text-foreground">{item.label}</span>
+                            <div key={item.label} className="flex flex-col items-center justify-center gap-1 p-4 bg-card h-full">
+                                <span className="text-xs font-bold text-foreground uppercase tracking-widest">{item.label}</span>
                                 <span className="text-[10px] text-muted-foreground text-center leading-tight">{item.desc}</span>
                             </div>
                         ))}
@@ -153,12 +154,12 @@ export function InterviewRoomPage() {
     return (
         <div className="flex flex-col h-dvh w-screen bg-background overflow-hidden">
             {/* Compact interview header */}
-            <div className="shrink-0 px-4 md:px-6 py-2.5 bg-background border-b border-border/60 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <BrainCircuit className="size-4 text-accent" />
-                    <h1 className="text-sm font-bold text-foreground">Capstone Examination</h1>
+            <div className="shrink-0 px-6 py-4 bg-background border-b border-border flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <BrainCircuit className="size-5 text-bauhaus-blue" />
+                    <h1 className="text-sm font-heading font-semibold text-foreground tracking-widest uppercase">Capstone Examination</h1>
                 </div>
-                <p className="text-xs text-muted-foreground hidden sm:block">
+                <p className="text-xs text-muted-foreground hidden sm:block font-mono tracking-widest uppercase">
                     Your answers are evaluated for course mastery.
                 </p>
             </div>

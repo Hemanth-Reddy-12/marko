@@ -14,20 +14,20 @@ export function CourseList({ courses, loading, onViewCourse, onDeleteCourse }: C
         return (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {Array.from({ length: 3 }).map((_, i) => (
-                    <Card key={i} className="bg-white border border-zinc-200/80 shadow-none rounded-xl overflow-hidden h-[180px]">
+                    <Card key={i} className="bg-card border border-border shadow-none rounded-none overflow-hidden h-[180px]">
                         <CardContent className="p-5 flex flex-col justify-between h-full gap-4 animate-pulse">
                             <div className="flex flex-col gap-3">
                                 <div className="flex justify-between items-center">
-                                    <div className="h-3 w-12 bg-zinc-100 rounded" />
-                                    <div className="h-4.5 w-16 bg-zinc-100 rounded-full" />
+                                    <div className="h-3 w-12 bg-muted rounded-none" />
+                                    <div className="h-4 w-16 bg-muted rounded-none" />
                                 </div>
-                                <div className="h-5 w-3/4 bg-zinc-100 rounded" />
-                                <div className="flex flex-col gap-1">
-                                    <div className="h-3.5 w-full bg-zinc-100 rounded" />
-                                    <div className="h-3.5 w-5/6 bg-zinc-100 rounded" />
+                                <div className="h-5 w-3/4 bg-muted rounded-none" />
+                                <div className="flex flex-col gap-2">
+                                    <div className="h-3 w-full bg-muted rounded-none" />
+                                    <div className="h-3 w-5/6 bg-muted rounded-none" />
                                 </div>
                             </div>
-                            <div className="h-3 w-full bg-zinc-100 rounded" />
+                            <div className="h-1 w-full bg-muted rounded-none" />
                         </CardContent>
                     </Card>
                 ))}

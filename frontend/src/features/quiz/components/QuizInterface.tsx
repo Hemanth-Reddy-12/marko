@@ -4,10 +4,11 @@ import type { Quiz, QuizAttemptResult } from "../types";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, CheckCircle2, XCircle, ArrowRight, RotateCcw, Trophy } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { AlertCircle, CheckCircle2, XCircle, ArrowRight, ArrowLeft, RotateCcw, Trophy } from "lucide-react";
+import { QuizMorphLoader } from "./QuizMorphLoader";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { Celebration } from "@/components/ui/celebration";
 
 interface QuizInterfaceProps {
     courseId: string;
@@ -21,7 +22,7 @@ const cardVariants = {
     animate: (i: number) => ({
         opacity: 1,
         y: 0,
-        transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1], delay: i * 0.06 },
+        transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] as any, delay: i * 0.06 },
     }),
 };
 
@@ -34,12 +35,14 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
     const [answers, setAnswers] = React.useState<Record<string, number>>({});
     const [submitting, setSubmitting] = React.useState(false);
     const [result, setResult] = React.useState<QuizAttemptResult | null>(null);
+    const [currentQuestionIndex, setCurrentQuestionIndex] = React.useState(0);
 
     const loadQuiz = React.useCallback(async () => {
         setLoading(true);
         setError(null);
         setResult(null);
         setAnswers({});
+        setCurrentQuestionIndex(0);
         try {
             const data = await fetchQuiz(courseId, lessonId);
             if (data.status === "GENERATING") {
@@ -74,10 +77,23 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
         setAnswers((prev) => ({ ...prev, [uniqueQId]: index }));
     };
 
+    const handleNext = () => {
+        if (!quiz) return;
+        if (currentQuestionIndex < quiz.questions.length - 1) {
+            setCurrentQuestionIndex(prev => prev + 1);
+        }
+    };
+
+    const handlePrevious = () => {
+        if (!quiz) return;
+        if (currentQuestionIndex > 0) {
+            setCurrentQuestionIndex(prev => prev - 1);
+        }
+    };
+
     const handleSubmit = async () => {
         if (!quiz) return;
         if (Object.keys(answers).length !== quiz.questions.length) {
-            // Use toast instead of alert in a real scenario
             return;
         }
         const answerArray = quiz.questions.map((q, qIndex) => answers[`${q.id}-${qIndex}`]);
@@ -94,66 +110,62 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
 
     if (loading) {
         return (
-            <div className="flex flex-col gap-6 max-w-3xl mx-auto w-full">
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                    <div className="size-4 rounded-full border-2 border-border border-t-accent animate-spin" />
-                    <span className="animate-pulse">{statusText}</span>
-                </div>
-                {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="rounded-xl border border-border bg-card p-6">
-                        <Skeleton className="h-5 w-3/4 rounded mb-5" />
-                        <div className="flex flex-col gap-3">
-                            {Array.from({ length: 4 }).map((_, j) => (
-                                <Skeleton key={j} className="h-12 w-full rounded-xl" />
-                            ))}
-                        </div>
-                    </div>
-                ))}
+            <div className="flex flex-col gap-8 max-w-3xl mx-auto w-full">
+                <QuizMorphLoader statusText={statusText} />
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center gap-4 py-20 px-6 text-center max-w-md mx-auto">
-                <div className="size-12 rounded-2xl bg-destructive/10 flex items-center justify-center">
-                    <AlertCircle className="size-6 text-destructive" />
+            <div className="flex flex-col items-center justify-center gap-6 py-20 px-6 text-center max-w-md mx-auto">
+                <div className="size-16 border border-border bg-muted/20 flex items-center justify-center">
+                    <AlertCircle className="size-8 text-destructive" />
                 </div>
                 <div>
-                    <h3 className="text-base font-bold text-foreground">Failed to load quiz</h3>
-                    <p className="text-sm text-muted-foreground mt-1">{error}</p>
+                    <h3 className="text-xl font-heading font-semibold text-foreground">Failed to load quiz</h3>
+                    <p className="text-sm text-muted-foreground mt-2">{error}</p>
                 </div>
-                <Button onClick={loadQuiz} variant="outline" className="mt-2 gap-2">
-                    <RotateCcw className="size-4" />
-                    Try again
+                <Button onClick={loadQuiz} className="mt-4 rounded-none h-12 px-8 bg-foreground text-background">
+                    <RotateCcw className="size-4 mr-2" />
+                    Try Again
                 </Button>
             </div>
         );
     }
 
     if (!quiz || !quiz.questions.length) {
-        return <div className="p-6 text-center text-muted-foreground text-sm">No questions available.</div>;
+        return <div className="p-12 text-center text-muted-foreground text-sm font-mono uppercase tracking-widest">No questions available.</div>;
     }
 
-    const questionsToDisplay = result?.quiz.questions || quiz.questions;
     const isCompleted = !!result;
+    const questionsToDisplay = isCompleted ? (result?.quiz.questions || quiz.questions) : [quiz.questions[currentQuestionIndex]];
     const allAnswered = Object.keys(answers).length === quiz.questions.length;
     const scorePercent = result ? Math.round(result.attempt.score * 100) : 0;
+    
+    // We need to map the index properly for `questionsToDisplay` when not completed
+    const getActualIndex = (displayIndex: number) => isCompleted ? displayIndex : currentQuestionIndex;
 
     return (
-        <div className="max-w-3xl mx-auto w-full pb-16">
-            <motion.h2
-                className="text-xl font-bold text-foreground mb-6"
+        <div className="max-w-3xl mx-auto w-full pb-20">
+            <motion.div
+                className="flex items-end justify-between border-b border-border pb-4 mb-8"
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
             >
-                Lesson Knowledge Check
-            </motion.h2>
+                <h2 className="text-3xl font-heading font-semibold text-foreground tracking-tight">
+                    {isCompleted ? "Quiz Result" : "Knowledge Check"}
+                </h2>
+                <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-1">
+                    {isCompleted ? `${quiz.questions.length} Questions` : `Question ${currentQuestionIndex + 1} of ${quiz.questions.length}`}
+                </span>
+            </motion.div>
 
-            <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-8">
                 {questionsToDisplay.map((q, qIndex) => {
-                    const uniqueQId = `${q.id}-${qIndex}`;
+                    const actualIdx = getActualIndex(qIndex);
+                    const uniqueQId = `${q.id}-${actualIdx}`;
                     const selectedIdx = answers[uniqueQId];
                     const correctIdx = q.correctAnswerIndex;
                     const isCorrect = selectedIdx === correctIdx;
@@ -161,16 +173,18 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
                     return (
                         <motion.div
                             key={uniqueQId}
-                            custom={qIndex}
+                            custom={actualIdx}
                             variants={cardVariants}
                             initial="initial"
                             animate="animate"
-                            className="bg-card border border-border rounded-2xl p-5 md:p-6 shadow-sm"
+                            className="bg-card border border-border rounded-none p-6 md:p-8 relative"
                         >
-                            <h3 className="text-sm font-semibold text-foreground mb-4 leading-relaxed">
-                                <span className="inline-flex items-center justify-center size-6 rounded-lg bg-accent/10 text-accent text-xs font-bold mr-2 shrink-0">
-                                    {qIndex + 1}
-                                </span>
+                            {/* Bauhaus Question Numbering */}
+                            <div className="absolute top-0 left-0 bg-foreground text-background font-heading font-bold text-lg px-4 py-1">
+                                {actualIdx + 1}
+                            </div>
+                            
+                            <h3 className="text-lg font-medium text-foreground mt-8 mb-6 leading-relaxed">
                                 {q.text}
                             </h3>
 
@@ -178,7 +192,7 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
                                 name={uniqueQId}
                                 value={selectedIdx !== undefined ? selectedIdx.toString() : ""}
                                 onValueChange={(val) => handleSelect(uniqueQId, parseInt(val))}
-                                className="flex flex-col gap-2.5"
+                                className="flex flex-col gap-3"
                                 disabled={isCompleted}
                             >
                                 {q.options.map((opt, optIdx) => {
@@ -187,13 +201,13 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
 
                                     if (isCompleted) {
                                         if (optIdx === correctIdx) {
-                                            itemStateClass = "bg-emerald-50 border-emerald-300 text-emerald-900";
-                                            icon = <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />;
+                                            itemStateClass = "bg-success/10 border-success text-success-foreground";
+                                            icon = <CheckCircle2 className="size-4 text-success shrink-0" />;
                                         } else if (optIdx === selectedIdx && optIdx !== correctIdx) {
-                                            itemStateClass = "bg-red-50 border-red-300 text-red-900";
-                                            icon = <XCircle className="size-4 text-red-500 shrink-0" />;
+                                            itemStateClass = "bg-destructive/10 border-destructive text-destructive";
+                                            icon = <XCircle className="size-4 text-destructive shrink-0" />;
                                         } else {
-                                            itemStateClass = "opacity-40";
+                                            itemStateClass = "opacity-50 bg-muted/30 border-border";
                                         }
                                     }
 
@@ -203,9 +217,9 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
                                         <Label
                                             key={optIdx}
                                             className={cn(
-                                                "group flex items-center gap-3 border rounded-xl p-3.5 cursor-pointer transition-all duration-200 select-none",
-                                                !isCompleted && "hover:bg-accent/5 border-border hover:border-accent/40 hover:-translate-y-[1px] hover:shadow-sm active:translate-y-0",
-                                                isSelected && "border-accent bg-accent/5 ring-1 ring-accent shadow-sm",
+                                                "group flex items-center gap-4 border border-border rounded-none p-4 cursor-pointer transition-all duration-200 select-none",
+                                                !isCompleted && "hover:bg-muted/50 hover:border-foreground",
+                                                isSelected && "border-foreground bg-muted/20 ring-1 ring-foreground",
                                                 isCompleted && "cursor-default",
                                                 itemStateClass
                                             )}
@@ -216,19 +230,19 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
                                                 className="sr-only"
                                             />
 
-                                            {/* Custom radio indicator */}
+                                            {/* Geometric Custom Radio */}
                                             {!isCompleted && (
                                                 <div className={cn(
-                                                    "size-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-200",
+                                                    "size-5 border-2 rounded-none flex items-center justify-center shrink-0 transition-all duration-200",
                                                     isSelected
-                                                        ? "border-accent bg-accent"
-                                                        : "border-border group-hover:border-accent/60"
+                                                        ? "border-foreground bg-foreground"
+                                                        : "border-muted-foreground group-hover:border-foreground"
                                                 )}>
-                                                    {isSelected && <div className="size-1.5 rounded-full bg-white" />}
+                                                    {isSelected && <div className="size-2 bg-background rounded-none" />}
                                                 </div>
                                             )}
 
-                                            <div className="flex-1 text-sm leading-relaxed">{opt}</div>
+                                            <div className="flex-1 text-base leading-relaxed">{opt}</div>
                                             {icon}
                                         </Label>
                                     );
@@ -240,17 +254,22 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
                                 {isCompleted && q.rationale && (
                                     <motion.div
                                         className={cn(
-                                            "mt-4 p-3.5 rounded-xl text-sm border",
+                                            "mt-6 p-5 rounded-none text-sm border",
                                             isCorrect
-                                                ? "bg-emerald-50 border-emerald-100 text-emerald-900"
-                                                : "bg-red-50 border-red-100 text-red-900"
+                                                ? "bg-success/5 border-success/30 text-foreground"
+                                                : "bg-destructive/5 border-destructive/30 text-foreground"
                                         )}
-                                        initial={{ opacity: 0, y: 6 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.25, delay: 0.1 }}
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: "auto" }}
+                                        transition={{ duration: 0.3 }}
                                     >
-                                        <span className="font-semibold">{isCorrect ? "Correct: " : "Incorrect: "}</span>
-                                        {q.rationale}
+                                        <span className={cn(
+                                            "font-bold uppercase tracking-widest text-[10px] mr-2",
+                                            isCorrect ? "text-success" : "text-destructive"
+                                        )}>
+                                            {isCorrect ? "Correct" : "Incorrect"}
+                                        </span>
+                                        <span className="leading-relaxed">{q.rationale}</span>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -260,111 +279,137 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
             </div>
 
             {/* Submit / Result section */}
-            <div className="mt-8">
+            <div className="mt-12">
                 <AnimatePresence mode="wait">
                     {!isCompleted ? (
                         <motion.div
                             key="submit"
-                            className="flex flex-col items-center gap-3"
+                            className="flex flex-col gap-4"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                         >
-                            {!allAnswered && (
-                                <p className="text-xs text-muted-foreground">
-                                    Answer all {quiz.questions.length} questions to submit.
-                                </p>
-                            )}
-                            <Button
-                                onClick={handleSubmit}
-                                disabled={submitting || !allAnswered}
-                                className="min-w-[200px] bg-accent hover:bg-accent/90 text-white shadow-sm"
-                                size="lg"
-                            >
-                                {submitting ? (
-                                    <span className="flex items-center gap-2">
-                                        <div className="size-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                                        Submitting…
-                                    </span>
-                                ) : "Submit Answers"}
-                            </Button>
+                            <div className="flex justify-between items-center gap-3">
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                                    {answers[`${quiz.questions[currentQuestionIndex].id}-${currentQuestionIndex}`] === undefined 
+                                        ? "Select an answer to continue"
+                                        : (currentQuestionIndex < quiz.questions.length - 1 ? "Ready for next question" : "Ready to submit")}
+                                </span>
+                                
+                                <div className="flex items-center gap-3">
+                                    {currentQuestionIndex > 0 && (
+                                        <Button
+                                            onClick={handlePrevious}
+                                            variant="outline"
+                                            className="rounded-none h-14 border-2 border-foreground bg-card text-foreground hover:bg-muted font-semibold tracking-wide text-sm"
+                                        >
+                                            <ArrowLeft className="size-4 mr-2" />
+                                            PREVIOUS
+                                        </Button>
+                                    )}
+                                    
+                                    {currentQuestionIndex < quiz.questions.length - 1 ? (
+                                        <Button
+                                            onClick={handleNext}
+                                            disabled={answers[`${quiz.questions[currentQuestionIndex].id}-${currentQuestionIndex}`] === undefined}
+                                            className="min-w-[200px] rounded-none h-14 bg-foreground text-background hover:bg-foreground/90 font-semibold tracking-wide text-sm"
+                                        >
+                                            NEXT QUESTION
+                                            <ArrowRight className="size-4 ml-2" />
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            onClick={handleSubmit}
+                                            disabled={submitting || !allAnswered}
+                                            className="min-w-[200px] rounded-none h-14 bg-bauhaus-red hover:bg-bauhaus-red/90 text-white font-semibold tracking-wide text-sm"
+                                        >
+                                            {submitting ? (
+                                                <span className="flex items-center gap-3">
+                                                    <div className="size-4 rounded-none border-2 border-white/30 border-t-white animate-spin" />
+                                                    SUBMITTING
+                                                </span>
+                                            ) : "SUBMIT QUIZ"}
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                            
+                            {/* Geometric progress bar */}
+                            <div className="w-full h-1 bg-muted mt-4 overflow-hidden border border-border">
+                                <motion.div 
+                                    className="h-full bg-foreground"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${(currentQuestionIndex / quiz.questions.length) * 100}%` }}
+                                    transition={{ duration: 0.3 }}
+                                />
+                            </div>
                         </motion.div>
                     ) : (
                         <motion.div
                             key="result"
-                            className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm"
-                            initial={{ opacity: 0, y: 16, scale: 0.98 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                            className="rounded-none border border-border bg-card shadow-none mt-12"
+                            initial={{ opacity: 0, y: 16 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] as any }}
                         >
                             <div className={cn(
-                                "px-6 py-5 border-b border-border flex items-center justify-between",
-                                result.attempt.passed ? "bg-emerald-50" : "bg-red-50"
+                                "px-8 py-6 border-b border-border flex items-center justify-between",
+                                result.attempt.passed ? "bg-success/10" : "bg-destructive/10"
                             )}>
                                 <div>
-                                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Quiz Result</p>
-                                    <h3 className="text-lg font-bold text-foreground">
-                                        {result.attempt.passed ? "You passed! 🎉" : "Not quite — try again"}
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Quiz Result</p>
+                                    <h3 className="text-2xl font-heading font-semibold text-foreground">
+                                        {result.attempt.passed ? "You passed!" : "Review and try again."}
                                     </h3>
                                 </div>
                                 <div className={cn(
-                                    "size-16 rounded-2xl flex flex-col items-center justify-center border-2 shrink-0",
+                                    "size-20 flex flex-col items-center justify-center border shrink-0 bg-card",
                                     result.attempt.passed
-                                        ? "border-emerald-300 bg-emerald-100"
-                                        : "border-red-300 bg-red-100"
+                                        ? "border-success"
+                                        : "border-destructive"
                                 )}>
-                                    <Trophy className={cn(
-                                        "size-5 mb-0.5",
-                                        result.attempt.passed ? "text-emerald-600" : "text-red-400"
-                                    )} />
                                     <span className={cn(
-                                        "text-sm font-black",
-                                        result.attempt.passed ? "text-emerald-700" : "text-red-600"
+                                        "text-xl font-heading font-black",
+                                        result.attempt.passed ? "text-success" : "text-destructive"
                                     )}>
                                         {scorePercent}%
                                     </span>
                                 </div>
                             </div>
 
-                            {/* Animated score bar */}
-                            <div className="px-6 py-4">
-                                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                            {/* Geometric score bar */}
+                            <div className="px-8 py-6">
+                                <div className="h-2 bg-muted overflow-hidden border border-border">
                                     <motion.div
-                                        className={cn("h-full rounded-full", result.attempt.passed ? "bg-emerald-500" : "bg-red-400")}
+                                        className={cn("h-full", result.attempt.passed ? "bg-success" : "bg-destructive")}
                                         initial={{ width: 0 }}
                                         animate={{ width: `${scorePercent}%` }}
-                                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+                                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] as any, delay: 0.2 }}
                                     />
                                 </div>
-                                <p className={cn(
-                                    "text-sm font-medium mt-2",
-                                    result.attempt.passed ? "text-emerald-700" : "text-red-600"
-                                )}>
+                                <p className="text-sm font-medium mt-4 text-foreground">
                                     {result.attempt.passed
                                         ? "Excellent work! Ready for the next lesson."
                                         : "Review the explanations above and try again."}
                                 </p>
                             </div>
 
-                            <div className="px-6 pb-6">
+                            <div className="px-8 pb-8">
                                 {result.attempt.passed ? (
                                     <Button
                                         onClick={onContinue}
-                                        className="w-full bg-accent hover:bg-accent/90 text-white shadow-sm gap-2"
-                                        size="lg"
+                                        className="w-full rounded-none h-14 bg-bauhaus-blue hover:bg-bauhaus-blue/90 text-white font-semibold tracking-wide text-sm"
                                     >
-                                        Continue to Next Topic
-                                        <ArrowRight className="size-4" />
+                                        CONTINUE TO NEXT MODULE
+                                        <ArrowRight className="size-4 ml-2" />
                                     </Button>
                                 ) : (
                                     <Button
                                         onClick={loadQuiz}
-                                        className="w-full gap-2"
-                                        size="lg"
-                                        variant="outline"
+                                        className="w-full rounded-none h-14 font-semibold tracking-wide text-sm border-2 border-foreground bg-card text-foreground hover:bg-muted"
                                     >
-                                        <RotateCcw className="size-4" />
-                                        Retry Quiz
+                                        <RotateCcw className="size-4 mr-2" />
+                                        RETRY QUIZ
                                     </Button>
                                 )}
                             </div>
@@ -372,6 +417,7 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
                     )}
                 </AnimatePresence>
             </div>
+            {isCompleted && result?.attempt.passed && <Celebration />}
         </div>
     );
 }

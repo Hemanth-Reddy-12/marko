@@ -82,6 +82,22 @@ export class GeminiProvider implements ChatProvider {
         return { fullText: full };
     }
 
+    // Helper to recursively strip additionalProperties which Gemini doesn't support
+    private stripAdditionalProperties(obj: any): any {
+        if (Array.isArray(obj)) {
+            return obj.map(item => this.stripAdditionalProperties(item));
+        } else if (obj !== null && typeof obj === 'object') {
+            const newObj: any = {};
+            for (const key in obj) {
+                if (key !== 'additionalProperties') {
+                    newObj[key] = this.stripAdditionalProperties(obj[key]);
+                }
+            }
+            return newObj;
+        }
+        return obj;
+    }
+
     async generateStructured<T = any>(
         req: ChatRequest,
         schema: any, // JSON schema
@@ -92,9 +108,11 @@ export class GeminiProvider implements ChatProvider {
 
         const { history, systemInstruction } = this.formatMessages(req.messages);
 
+        const cleanSchema = this.stripAdditionalProperties(schema);
+
         const generationConfig: Record<string, any> = {
             responseMimeType: "application/json",
-            responseSchema: schema as Schema,
+            responseSchema: cleanSchema as Schema,
         };
         if (req.temperature !== undefined) generationConfig.temperature = req.temperature;
         if (req.maxTokens !== undefined) generationConfig.maxOutputTokens = req.maxTokens;
