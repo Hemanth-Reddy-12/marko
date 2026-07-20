@@ -4,11 +4,12 @@ import type { Quiz, QuizAttemptResult } from "../types";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, CheckCircle2, XCircle, ArrowRight, ArrowLeft, RotateCcw, Trophy } from "lucide-react";
+import { AlertCircle, CheckCircle2, XCircle, ArrowRight, ArrowLeft, RotateCcw, Key } from "lucide-react";
 import { QuizMorphLoader } from "./QuizMorphLoader";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { Celebration } from "@/components/ui/celebration";
+import { useNavigate } from "react-router-dom";
 
 interface QuizInterfaceProps {
     courseId: string;
@@ -27,6 +28,7 @@ const cardVariants = {
 };
 
 export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange }: QuizInterfaceProps) {
+    const navigate = useNavigate();
     const [quiz, setQuiz] = React.useState<Quiz | null>(null);
     const [loading, setLoading] = React.useState(true);
     const [statusText, setStatusText] = React.useState("Loading quiz...");
@@ -116,20 +118,37 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
         );
     }
 
+    const isApiKeyError = error && (/api key/i.test(error) || /unauthorized|401|invalid/i.test(error));
+
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center gap-6 py-20 px-6 text-center max-w-md mx-auto">
-                <div className="size-16 border border-border bg-muted/20 flex items-center justify-center">
+            <div className="flex flex-col items-center justify-center gap-6 py-20 px-6 text-center max-w-lg mx-auto">
+                <div className="size-16 border-2 border-destructive bg-destructive/10 flex items-center justify-center bauhaus-square">
                     <AlertCircle className="size-8 text-destructive" />
                 </div>
-                <div>
-                    <h3 className="text-xl font-heading font-semibold text-foreground">Failed to load quiz</h3>
-                    <p className="text-sm text-muted-foreground mt-2">{error}</p>
+                <div className="space-y-2">
+                    <h3 className="text-xl font-heading font-black text-foreground uppercase tracking-tight">
+                        {isApiKeyError ? "AI Provider API Key Error" : "Failed to Load Quiz"}
+                    </h3>
+                    <p className="text-sm font-mono text-muted-foreground mt-2 leading-relaxed">{error}</p>
                 </div>
-                <Button onClick={loadQuiz} className="mt-4 rounded-none h-12 px-8 bg-foreground text-background">
-                    <RotateCcw className="size-4 mr-2" />
-                    Try Again
-                </Button>
+                {isApiKeyError ? (
+                    <Button
+                        onClick={() => navigate("/settings")}
+                        className="mt-2 bauhaus-square bg-bauhaus-red text-white hover:bg-bauhaus-red/90 h-11 px-8 font-bold uppercase tracking-widest text-xs bauhaus-border shadow-[3px_3px_0px_0px_var(--foreground)] hover:shadow-none transition-all"
+                    >
+                        <Key className="size-4 mr-2" />
+                        Configure API Key in Settings
+                    </Button>
+                ) : (
+                    <Button
+                        onClick={loadQuiz}
+                        className="mt-2 bauhaus-square h-12 px-8 bg-foreground text-background font-bold uppercase tracking-widest text-xs"
+                    >
+                        <RotateCcw className="size-4 mr-2" />
+                        Try Again
+                    </Button>
+                )}
             </div>
         );
     }
@@ -143,7 +162,6 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
     const allAnswered = Object.keys(answers).length === quiz.questions.length;
     const scorePercent = result ? Math.round(result.attempt.score * 100) : 0;
     
-    // We need to map the index properly for `questionsToDisplay` when not completed
     const getActualIndex = (displayIndex: number) => isCompleted ? displayIndex : currentQuestionIndex;
 
     return (
@@ -179,7 +197,6 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
                             animate="animate"
                             className="bg-card border border-border rounded-none p-6 md:p-8 relative"
                         >
-                            {/* Bauhaus Question Numbering */}
                             <div className="absolute top-0 left-0 bg-foreground text-background font-heading font-bold text-lg px-4 py-1">
                                 {actualIdx + 1}
                             </div>
@@ -230,7 +247,6 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
                                                 className="sr-only"
                                             />
 
-                                            {/* Geometric Custom Radio */}
                                             {!isCompleted && (
                                                 <div className={cn(
                                                     "size-5 border-2 rounded-none flex items-center justify-center shrink-0 transition-all duration-200",
@@ -249,7 +265,6 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
                                 })}
                             </RadioGroup>
 
-                            {/* Rationale */}
                             <AnimatePresence>
                                 {isCompleted && q.rationale && (
                                     <motion.div
@@ -278,7 +293,6 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
                 })}
             </div>
 
-            {/* Submit / Result section */}
             <div className="mt-12">
                 <AnimatePresence mode="wait">
                     {!isCompleted ? (
@@ -334,7 +348,6 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
                                 </div>
                             </div>
                             
-                            {/* Geometric progress bar */}
                             <div className="w-full h-1 bg-muted mt-4 overflow-hidden border border-border">
                                 <motion.div 
                                     className="h-full bg-foreground"
@@ -377,7 +390,6 @@ export function QuizInterface({ courseId, lessonId, onContinue, onProgressChange
                                 </div>
                             </div>
 
-                            {/* Geometric score bar */}
                             <div className="px-8 py-6">
                                 <div className="h-2 bg-muted overflow-hidden border border-border">
                                     <motion.div

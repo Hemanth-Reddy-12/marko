@@ -4,6 +4,7 @@
 .claude/
 design-system/
 skills-lock.json
+.impeccable/
 
 # Dependencies
 node_modules/
@@ -36,3 +37,4 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+.vercel

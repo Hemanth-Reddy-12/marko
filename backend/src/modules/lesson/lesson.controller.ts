@@ -58,7 +58,7 @@ export async function getLesson(
                 throw new Error("Lesson is locked");
             }
 
-            if (lesson.generationStatus === GenerationStatus.NOT_GENERATED || lesson.generationStatus === GenerationStatus.FAILED) {
+            if (lesson.generationStatus === GenerationStatus.NOT_GENERATED) {
                 // Lock it to GENERATING
                 currentLesson = await tx.lesson.update({
                     where: { id: lessonId },
@@ -75,8 +75,8 @@ export async function getLesson(
             return;
         }
 
-        // If it's already generated, return it instantly
-        if ((currentLesson as any).generationStatus === GenerationStatus.GENERATED) {
+        // If it's already generated or failed, return it instantly
+        if ((currentLesson as any).generationStatus === GenerationStatus.GENERATED || (currentLesson as any).generationStatus === GenerationStatus.FAILED) {
             res.json(currentLesson);
             return;
         }
@@ -105,7 +105,7 @@ export async function getLesson(
                     "Lesson Ready",
                     `Lesson "${(currentLesson as any).title}" is now generated and ready to read!`
                 );
-            }).catch(async (error) => {
+            }).catch(async (error: any) => {
                 console.error("Content Agent failed:", error);
                 await prisma.lesson.update({
                     where: { id: lessonId },
@@ -116,7 +116,7 @@ export async function getLesson(
                 await sendNotification(
                     userId,
                     "Lesson Generation Failed",
-                    `We couldn't generate the content for: "${(currentLesson as any).title}".`
+                    `Failed to generate lesson "${(currentLesson as any).title}": ${error.message || "Invalid API key"}`
                 );
             });
         }

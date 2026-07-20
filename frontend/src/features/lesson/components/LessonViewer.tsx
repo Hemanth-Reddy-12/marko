@@ -10,9 +10,11 @@ import { TextReveal } from "@/components/animated/TextReveal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { pollLesson, regenerateLesson } from "../api/lesson.api";
 import type { LessonResponse } from "../types";
-import { AlertCircle, ArrowRight, RefreshCw } from "lucide-react";
+import { AlertCircle, ArrowRight, RefreshCw, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 interface LessonViewerProps {
     courseId: string;
@@ -30,7 +32,7 @@ const CodeHighlight = ({ className, children, node, ...props }: any) => {
         if (match) {
             codeToHtml(String(children).replace(/\n$/, ''), {
                 lang: language,
-                theme: 'github-dark' // Minimal dark theme
+                theme: 'github-dark'
             }).then(res => {
                 if (mounted) setHtml(res);
             }).catch(() => {
@@ -58,6 +60,7 @@ const CodeHighlight = ({ className, children, node, ...props }: any) => {
 };
 
 export function LessonViewer({ courseId, lessonId, onNext }: LessonViewerProps) {
+    const navigate = useNavigate();
     const [lesson, setLesson] = React.useState<LessonResponse | null>(null);
     const [loading, setLoading] = React.useState(true);
     const [statusText, setStatusText] = React.useState("Loading lesson...");
@@ -95,7 +98,7 @@ export function LessonViewer({ courseId, lessonId, onNext }: LessonViewerProps) 
             setError(null);
 
             try {
-                const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/courses/${courseId}/lessons/${lessonId}`, {
+                const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:5000" : "")}/api/courses/${courseId}/lessons/${lessonId}`, {
                     credentials: "include"
                 });
 
@@ -150,29 +153,71 @@ export function LessonViewer({ courseId, lessonId, onNext }: LessonViewerProps) 
         );
     }
 
+    const isApiKeyError = error && (/api key/i.test(error) || /unauthorized|401|invalid/i.test(error));
+
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center gap-6 py-32 px-6 text-center">
-                <div className="size-16 border border-border bg-muted/20 flex items-center justify-center">
+            <div className="flex flex-col items-center justify-center gap-6 py-24 px-6 text-center max-w-lg mx-auto">
+                <div className="size-16 border-2 border-destructive bg-destructive/10 flex items-center justify-center bauhaus-square">
                     <AlertCircle className="size-8 text-destructive" />
                 </div>
-                <div>
-                    <h3 className="text-xl font-heading font-semibold text-foreground">Failed to load lesson</h3>
-                    <p className="text-sm text-muted-foreground mt-2">{error}</p>
+                <div className="space-y-2">
+                    <h3 className="text-xl font-heading font-black text-foreground uppercase tracking-tight">
+                        {isApiKeyError ? "AI Provider API Key Error" : "Failed to Load Lesson"}
+                    </h3>
+                    <p className="text-sm font-mono text-muted-foreground leading-relaxed mt-2">{error}</p>
                 </div>
+                {isApiKeyError ? (
+                    <Button
+                        onClick={() => navigate("/settings")}
+                        className="bauhaus-square bg-bauhaus-red text-white hover:bg-bauhaus-red/90 font-bold uppercase tracking-widest text-xs h-11 px-6 bauhaus-border shadow-[3px_3px_0px_0px_var(--foreground)] hover:shadow-none transition-all"
+                    >
+                        <Key className="size-4 mr-2" />
+                        Configure API Key in Settings
+                    </Button>
+                ) : (
+                    <Button
+                        onClick={handleRegenerate}
+                        disabled={regenerating}
+                        className="bauhaus-square bg-foreground text-background font-bold uppercase tracking-widest text-xs h-11 px-6"
+                    >
+                        <RefreshCw className={cn("size-4 mr-2", regenerating && "animate-spin")} />
+                        Retry Lesson Generation
+                    </Button>
+                )}
             </div>
         );
     }
 
-    if (!lesson?.content) {
+    if (!lesson?.content || lesson?.generationStatus === "FAILED") {
         return (
-            <div className="flex flex-col items-center justify-center gap-6 py-32 px-6 text-center">
-                <div className="size-16 border border-border bg-muted/20 flex items-center justify-center">
-                    <AlertCircle className="size-8 text-muted-foreground" />
+            <div className="flex flex-col items-center justify-center gap-6 py-24 px-6 text-center max-w-lg mx-auto">
+                <div className="size-16 border-2 border-destructive bg-destructive/10 flex items-center justify-center bauhaus-square">
+                    <AlertCircle className="size-8 text-destructive" />
                 </div>
-                <div>
-                    <h3 className="text-xl font-heading font-semibold text-foreground">No content available</h3>
-                    <p className="text-sm text-muted-foreground mt-2">This lesson has not been generated properly.</p>
+                <div className="space-y-2">
+                    <h3 className="text-xl font-heading font-black text-foreground uppercase tracking-tight">Lesson Generation Failed</h3>
+                    <p className="text-sm font-mono text-muted-foreground leading-relaxed">
+                        The AI engine could not generate this lesson content. Please check your AI Provider API key configuration.
+                    </p>
+                </div>
+                <div className="flex flex-wrap gap-4 justify-center mt-2">
+                    <Button
+                        onClick={() => navigate("/settings")}
+                        className="bauhaus-square bg-bauhaus-red text-white hover:bg-bauhaus-red/90 font-bold uppercase tracking-widest text-xs h-11 px-6 bauhaus-border shadow-[3px_3px_0px_0px_var(--foreground)] hover:shadow-none transition-all"
+                    >
+                        <Key className="size-4 mr-2" />
+                        Settings → AI Providers
+                    </Button>
+                    <Button
+                        onClick={handleRegenerate}
+                        disabled={regenerating}
+                        variant="outline"
+                        className="bauhaus-square bauhaus-border font-bold uppercase tracking-widest text-xs h-11 px-6"
+                    >
+                        <RefreshCw className={cn("size-4 mr-2", regenerating && "animate-spin")} />
+                        Retry Generation
+                    </Button>
                 </div>
             </div>
         );

@@ -148,8 +148,9 @@ export function CoursesPage() {
             </motion.div>
 
             {error && (
-                <motion.div variants={itemVariants} className="text-xs font-semibold text-destructive bg-destructive/10 p-3 rounded-none border border-destructive/20">
-                    {error}
+                <motion.div variants={itemVariants} className="text-xs font-semibold text-destructive bg-destructive/10 p-3 rounded-none border border-destructive/20 flex items-center justify-between gap-4">
+                    <span>{error}</span>
+                    <button onClick={() => loadCourses()} className="underline text-xs font-bold uppercase tracking-wider hover:no-underline shrink-0">Retry</button>
                 </motion.div>
             )}
 
@@ -189,9 +190,9 @@ export function CoursesPage() {
                                 <BookOpen className="size-5 text-bauhaus-red" />
                             </div>
                             <div className="flex flex-col gap-1.5 max-w-md mx-auto">
-                                <h2 className="text-xl font-heading font-bold uppercase tracking-tight text-foreground">No active courses yet</h2>
+                                <h2 className="text-xl font-heading font-bold uppercase tracking-tight text-foreground">No courses yet</h2>
                                 <p className="text-sm text-muted-foreground font-medium leading-relaxed">
-                                    Create a course outline with a prompt. Let AI build your structured curriculum instantly.
+                                    Describe what you want to learn. Marko will generate a full structured curriculum with lessons and quizzes.
                                 </p>
                             </div>
                             <Button

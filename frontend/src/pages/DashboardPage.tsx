@@ -1,10 +1,9 @@
 import * as React from "react";
 import { useSession } from "@/lib/auth-client";
-import { Play, Calendar, CheckCircle2 } from "lucide-react";
+import { Play, Calendar, CheckCircle2, BookOpen, Award, MessageSquare, ArrowRight, Clock, Key } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { Lesson } from "@/features/course/components/CourseCard";
-import { PlannerForm } from "@/features/course/components/PlannerForm";
 import { fetchApi } from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -34,17 +33,20 @@ export function DashboardPage() {
     const [error, setError] = React.useState<string | null>(null);
     const [schedule, setSchedule] = React.useState<any[]>([]);
     const [stats, setStats] = React.useState<{ totalCourses: number; completedQuizzes: number; completedInterviews: number } | null>(null);
+    const [aiConfig, setAiConfig] = React.useState<any>(null);
 
     const loadDashboardData = async () => {
         try {
-            const [scheduleData, statsData] = await Promise.all([
+            const [scheduleData, statsData, configData] = await Promise.all([
                 fetchApi<any[]>("/api/dashboard/schedule").catch(() => []),
-                fetchApi<any>("/api/dashboard/stats").catch(() => null)
+                fetchApi<any>("/api/dashboard/stats").catch(() => null),
+                fetchApi<any>("/api/ai/config").catch(() => null)
             ]);
             setSchedule(scheduleData);
             setStats(statsData);
+            setAiConfig(configData);
         } catch (e) {
-            console.error(e);
+            console.error("Failed to load dashboard stats", e);
         }
     };
 
@@ -119,134 +121,204 @@ export function DashboardPage() {
             animate="animate"
         >
             {/* Header */}
-            <motion.div variants={itemVariants} className="flex justify-between items-end border-b border-border pb-6 mt-4">
+            <motion.div variants={itemVariants} className="flex justify-between items-end border-b bauhaus-border pb-6 mt-4 border-l-0 border-r-0 border-t-0">
                 <div>
                     <div className="flex items-center gap-3 mb-2">
-                        <div className="size-4 bg-bauhaus-red bauhaus-circle"></div>
-                        <h1 className="text-3xl font-heading font-semibold tracking-tight text-foreground uppercase">Dashboard</h1>
+                        <div className="size-4 bg-bauhaus-red bauhaus-square shrink-0" />
+                        <h1 className="text-3xl font-heading font-black tracking-tight text-foreground uppercase">
+                            Dashboard
+                        </h1>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">Welcome back, {session?.user?.name?.split(" ")[0] || "Student"}. Here's your learning overview.</p>
+                    <p className="text-sm font-mono text-muted-foreground mt-1">
+                        Welcome back, {session?.user?.name?.split(" ")[0] || "Learner"}. Here's your autonomous learning overview.
+                    </p>
+                </div>
+                <div className="hidden sm:flex items-center gap-2">
+                    <span className="text-xs font-mono uppercase tracking-widest text-muted-foreground bg-muted px-3 py-1.5 bauhaus-border">
+                        {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                    </span>
                 </div>
             </motion.div>
 
-            {/* Error */}
+            {/* No API Key Warning Banner */}
+            {aiConfig && !aiConfig.hasConfiguredKey && (
+                <motion.div variants={itemVariants} className="bg-bauhaus-yellow/20 border-2 border-bauhaus-yellow p-6 bauhaus-square flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="size-10 bg-bauhaus-yellow text-black flex items-center justify-center font-bold text-xl shrink-0 bauhaus-square">
+                            <Key className="size-5" />
+                        </div>
+                        <div>
+                            <h4 className="font-heading font-black uppercase text-foreground text-sm tracking-wide">
+                                No AI API Key Added Yet
+                            </h4>
+                            <p className="text-xs font-mono text-muted-foreground mt-0.5">
+                                Please add an API key in Settings → AI Providers to start creating autonomous AI courses and quizzes.
+                            </p>
+                        </div>
+                    </div>
+                    <Button
+                        onClick={() => navigate("/settings")}
+                        className="bauhaus-square bg-foreground text-background hover:bg-foreground/90 font-bold uppercase tracking-widest text-xs h-11 px-6 shrink-0 shadow-[3px_3px_0px_0px_var(--bauhaus-yellow)]"
+                    >
+                        Add API Key in Settings
+                    </Button>
+                </motion.div>
+            )}
+
             {error && (
-                <motion.div variants={itemVariants} className="text-xs font-semibold text-destructive bg-destructive/10 p-3 rounded-none border border-destructive/20">
-                    {error}
+                <motion.div variants={itemVariants} className="text-xs font-mono font-bold text-destructive bg-destructive/10 p-4 bauhaus-square bauhaus-border border-destructive">
+                    {error} <button onClick={() => loadCourses()} className="underline ml-1 hover:no-underline">Try again</button>
                 </motion.div>
             )}
 
             {/* Top Quick Stats Grid */}
             {stats && (
                 <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bauhaus-border p-5 bg-bauhaus-yellow text-black flex justify-between items-center">
-                        <p className="text-[10px] uppercase tracking-widest font-bold">Total Courses</p>
-                        <p className="text-3xl font-mono font-bold">{stats.totalCourses}</p>
+                    <div className="bauhaus-border p-6 bg-bauhaus-yellow text-black flex justify-between items-center bauhaus-square bauhaus-shadow hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+                        <div className="flex flex-col gap-1">
+                            <span className="text-[11px] uppercase tracking-widest font-black flex items-center gap-2">
+                                <BookOpen className="size-4" /> Total Courses
+                            </span>
+                            <span className="text-4xl font-mono font-black mt-1">{stats.totalCourses}</span>
+                        </div>
+                        <div className="size-10 bg-black/10 border-2 border-black flex items-center justify-center font-bold text-lg">
+                            {stats.totalCourses > 0 ? "Active" : "0"}
+                        </div>
                     </div>
-                    <div className="bauhaus-border p-5 bg-bauhaus-blue text-white flex justify-between items-center">
-                        <p className="text-[10px] uppercase tracking-widest font-bold">Quizzes Passed</p>
-                        <p className="text-3xl font-mono font-bold">{stats.completedQuizzes}</p>
+
+                    <div className="bauhaus-border p-6 bg-bauhaus-blue text-white flex justify-between items-center bauhaus-square bauhaus-shadow hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+                        <div className="flex flex-col gap-1">
+                            <span className="text-[11px] uppercase tracking-widest font-black flex items-center gap-2">
+                                <Award className="size-4" /> Quizzes Passed
+                            </span>
+                            <span className="text-4xl font-mono font-black mt-1">{stats.completedQuizzes}</span>
+                        </div>
+                        <div className="size-10 bg-white/20 border-2 border-white flex items-center justify-center font-bold text-lg">
+                            ✓
+                        </div>
                     </div>
-                    <div className="bauhaus-border p-5 bg-bauhaus-red text-white flex justify-between items-center">
-                        <p className="text-[10px] uppercase tracking-widest font-bold">Interviews Completed</p>
-                        <p className="text-3xl font-mono font-bold">{stats.completedInterviews}</p>
+
+                    <div className="bauhaus-border p-6 bg-bauhaus-red text-white flex justify-between items-center bauhaus-square bauhaus-shadow hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+                        <div className="flex flex-col gap-1">
+                            <span className="text-[11px] uppercase tracking-widest font-black flex items-center gap-2">
+                                <MessageSquare className="size-4" /> Interviews Cleared
+                            </span>
+                            <span className="text-4xl font-mono font-black mt-1">{stats.completedInterviews}</span>
+                        </div>
+                        <div className="size-10 bg-white/20 border-2 border-white flex items-center justify-center font-bold text-lg">
+                            AI
+                        </div>
                     </div>
                 </motion.div>
             )}
 
-            {/* Main Content Layout centered in the middle */}
-            <div className="flex flex-col gap-6 max-w-4xl mx-auto w-full">
+            {/* Main Content Layout */}
+            <div className="flex flex-col gap-8 max-w-5xl mx-auto w-full">
                 
                 {/* Continue Learning / Current Course */}
                 <motion.div variants={itemVariants}>
                     {currentCourse ? (
-                    <Card className="rounded-none border border-border shadow-none bg-card w-full">
-                        <CardContent className="p-0 flex flex-col md:flex-row">
-                            <div className="p-8 flex flex-col justify-between flex-1 gap-6 border-b md:border-b-0 md:border-r border-border">
-                                <div>
-                                    <Badge variant="outline" className="rounded-none border-bauhaus-blue text-bauhaus-blue mb-4 uppercase tracking-widest text-[10px]">
-                                        {currentCourse.course.status === "COMPLETED" ? "Completed" : currentCourse.course.status === "IN_PROGRESS" ? "In Progress" : "Start Learning"}
-                                    </Badge>
-                                    <h2 className="text-2xl font-heading font-semibold text-foreground uppercase tracking-tight">{currentCourse.course.title}</h2>
-                                    <p className="text-sm text-muted-foreground mt-2 max-w-md leading-relaxed">
-                                        {currentCourse.allCompleted
-                                            ? "Next up: Capstone Mock Interview."
-                                            : currentCourse.nextLesson
-                                                ? `Next up: ${currentCourse.nextLesson.title}.`
-                                                : currentCourse.course.description || "Continue where you left off."}
-                                    </p>
+                        <Card className="bauhaus-square bauhaus-border bauhaus-shadow bg-card w-full overflow-hidden">
+                            <CardContent className="p-0 flex flex-col md:flex-row">
+                                <div className="p-6 sm:p-8 flex flex-col justify-between flex-1 gap-6 border-b md:border-b-0 md:border-r bauhaus-border">
+                                    <div>
+                                        <div className="bauhaus-square border-2 border-bauhaus-blue text-bauhaus-blue mb-4 w-fit uppercase tracking-widest text-[10px] font-black px-2.5 py-1">
+                                            {currentCourse.course.status === "COMPLETED" ? "Completed" : currentCourse.course.status === "IN_PROGRESS" ? "In Progress" : "Start Learning"}
+                                        </div>
+                                        <h2 className="text-xl sm:text-2xl font-heading font-black text-foreground uppercase tracking-tight leading-snug">
+                                            {currentCourse.course.title}
+                                        </h2>
+                                        <p className="text-sm font-mono text-muted-foreground mt-3 leading-relaxed">
+                                            {currentCourse.allCompleted
+                                                ? "All lessons done — your capstone mock interview is next."
+                                                : currentCourse.nextLesson
+                                                    ? `Up next: ${currentCourse.nextLesson.title}.`
+                                                    : currentCourse.course.description || "Continue where you left off."}
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-3 mt-2">
+                                        <Button
+                                            onClick={() => {
+                                                if (currentCourse.allCompleted) {
+                                                    navigate(`/courses/${currentCourse.course.id}/interview`);
+                                                } else {
+                                                    handleViewCourse(currentCourse.course.id);
+                                                }
+                                            }}
+                                            className="bauhaus-square bg-bauhaus-blue text-white hover:bg-bauhaus-blue/90 font-black uppercase tracking-widest text-xs h-11 px-6 bauhaus-border shadow-[3px_3px_0px_0px_var(--foreground)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                                        >
+                                            <Play className="size-4 mr-2 text-bauhaus-yellow" />
+                                            {currentCourse.allCompleted ? "Start Interview" : currentCourse.percent === 0 ? "Start Course" : "Resume Lesson"}
+                                        </Button>
+                                        <span className="text-[11px] text-muted-foreground font-mono uppercase tracking-wider flex items-center gap-1.5">
+                                            <Clock className="size-3.5" />
+                                            {currentCourse.remainingMinutes > 0 ? `${currentCourse.remainingMinutes} mins left` : "No estimate"}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-4 mt-4">
-                                    <Button
-                                        onClick={() => {
-                                            if (currentCourse.allCompleted) {
-                                                navigate(`/courses/${currentCourse.course.id}/interview`);
-                                            } else {
-                                                handleViewCourse(currentCourse.course.id);
-                                            }
-                                        }}
-                                        className="rounded-none bg-bauhaus-blue text-white hover:bg-bauhaus-blue/90 group font-medium bauhaus-border bauhaus-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all"
-                                    >
-                                        <Play className="size-4 mr-2 group-hover:text-bauhaus-yellow transition-colors" />
-                                        {currentCourse.allCompleted ? "Start Interview" : currentCourse.percent === 0 ? "Start Course" : "Resume Lesson"}
-                                    </Button>
-                                    <span className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
-                                        {currentCourse.remainingMinutes > 0 ? `${currentCourse.remainingMinutes} MINS REMAINING` : "NO TIME ESTIMATE"}
-                                    </span>
+                                <div className="bg-muted/30 p-6 sm:p-8 flex flex-col justify-center w-full md:w-72 shrink-0">
+                                    <div className="flex justify-between items-end mb-3">
+                                        <span className="text-xs font-black text-foreground uppercase tracking-widest">Progress</span>
+                                        <span className="text-sm font-mono font-black text-foreground">{currentCourse.percent}%</span>
+                                    </div>
+                                    <Progress value={currentCourse.percent} className="h-2 bauhaus-square bg-muted [&>div]:bg-bauhaus-blue" />
+                                    <div className="mt-5 flex items-center gap-2">
+                                        <CheckCircle2 className="size-4 text-bauhaus-blue shrink-0" />
+                                        <span className="text-xs font-mono text-muted-foreground">{currentCourse.completed} of {currentCourse.total} lessons done</span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="bg-muted/30 p-8 flex flex-col justify-center min-w-[240px]">
-                                <div className="flex justify-between items-end mb-2">
-                                    <span className="text-[10px] font-semibold text-foreground uppercase tracking-widest">Course Progress</span>
-                                    <span className="text-xs font-mono text-muted-foreground">{currentCourse.percent}%</span>
-                                </div>
-                                <Progress value={currentCourse.percent} className="h-1.5 rounded-none bg-zinc-200 dark:bg-zinc-800 [&>div]:bg-bauhaus-blue dark:[&>div]:bg-sky-400" />
-                                <div className="mt-6 flex items-center gap-2">
-                                    <CheckCircle2 className="size-4 text-success" />
-                                    <span className="text-xs text-muted-foreground">{currentCourse.completed} of {currentCourse.total} lessons completed</span>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
                     ) : (
-                    <Card className="rounded-none border border-border shadow-none bg-card w-full">
-                        <CardContent className="p-8 flex flex-col items-start justify-center gap-4">
-                            <Badge variant="outline" className="rounded-none border-muted-foreground text-muted-foreground uppercase tracking-widest text-[10px]">Not Started</Badge>
-                            <h2 className="text-2xl font-heading font-semibold text-foreground uppercase tracking-tight">No Course In Progress</h2>
-                            <p className="text-sm text-muted-foreground max-w-md leading-relaxed">Visit the My Courses tab in the sidebar to build your custom syllabus outline.</p>
-                        </CardContent>
-                    </Card>
+                        <Card className="bauhaus-square bauhaus-border bauhaus-shadow bg-card w-full">
+                            <CardContent className="p-8 flex flex-col items-start justify-center gap-4">
+                                <div className="bauhaus-square border-2 border-border text-muted-foreground uppercase tracking-widest text-[10px] font-black w-fit px-2 py-1">
+                                    No Course Active
+                                </div>
+                                <h2 className="text-2xl font-heading font-black text-foreground uppercase tracking-tight">Ready when you are</h2>
+                                <p className="text-sm font-mono text-muted-foreground max-w-md leading-relaxed">
+                                    Create a new course from the Courses page — Marko will build a full curriculum for you in seconds.
+                                </p>
+                                <Button
+                                    onClick={() => navigate("/courses")}
+                                    className="bauhaus-square bg-foreground text-background hover:bg-bauhaus-red hover:text-white font-bold uppercase tracking-wider text-xs h-10 px-6 mt-2"
+                                >
+                                    Go to Courses <ArrowRight className="size-4 ml-2" />
+                                </Button>
+                            </CardContent>
+                        </Card>
                     )}
                 </motion.div>
 
-                {/* Upcoming / Tasks (Up Next) in the middle */}
+                {/* Up Next / Cadence Scheduled Lessons */}
                 <motion.div variants={itemVariants}>
-                    <Card className="rounded-none bauhaus-border shadow-none bg-card w-full">
-                        <CardHeader className="border-b-2 border-foreground pb-4 bg-bauhaus-red text-white">
-                            <CardTitle className="text-base font-semibold flex items-center gap-2 uppercase tracking-widest text-white">
-                                <Calendar className="size-4" />
-                                Up Next
+                    <Card className="bauhaus-square bauhaus-border bauhaus-shadow bg-card w-full">
+                        <CardHeader className="border-b bauhaus-border bg-bauhaus-red pb-4 text-white">
+                            <CardTitle className="text-base font-bold flex items-center gap-2 uppercase tracking-widest text-white">
+                                <Calendar className="size-4" /> Up Next Tasks
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-0">
                             <div className="divide-y divide-border">
                                 {schedule.length === 0 ? (
-                                    <div className="p-6 text-center text-xs text-muted-foreground font-mono uppercase tracking-widest bg-muted/10">No lessons scheduled for today. You're all caught up!</div>
+                                    <div className="p-8 text-center text-xs text-muted-foreground font-mono uppercase tracking-widest bg-muted/10">
+                                        No lessons scheduled for today. You're all caught up!
+                                    </div>
                                 ) : (
-                                    schedule.map(lesson => (
-                                        <div key={lesson.id} className="p-6 flex justify-between items-center hover:bg-muted/30 transition-colors">
-                                            <div className="flex gap-4">
-                                                <div className="mt-0.5">
-                                                    <div className="size-2 bg-bauhaus-yellow rounded-none mt-1.5" />
-                                                </div>
+                                    schedule.map((lesson) => (
+                                        <div key={lesson.id} className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-muted/30 transition-colors">
+                                            <div className="flex gap-4 items-start">
+                                                <div className="size-3 bg-bauhaus-yellow border border-border bauhaus-square mt-1 shrink-0" />
                                                 <div>
-                                                    <p className="text-sm font-semibold uppercase tracking-wider">{lesson.title}</p>
-                                                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{lesson.course.title} • {lesson.estimateTime} mins</p>
+                                                    <p className="text-sm font-bold uppercase tracking-wider text-foreground">{lesson.title}</p>
+                                                    <p className="text-xs font-mono text-muted-foreground mt-1 leading-relaxed">
+                                                        {lesson.course?.title} • {lesson.estimateTime || 15} mins
+                                                    </p>
                                                 </div>
                                             </div>
                                             <Button 
                                                 onClick={() => navigate(`/courses/${lesson.courseId}`)} 
-                                                className="rounded-none bg-bauhaus-blue text-white hover:bg-bauhaus-blue/90 font-bold text-xs uppercase tracking-widest h-10 px-6 bauhaus-border"
+                                                className="bauhaus-square bg-bauhaus-blue text-white hover:bg-bauhaus-blue/90 font-bold text-xs uppercase tracking-widest h-10 px-6 bauhaus-border shrink-0 self-start sm:self-auto"
                                             >
                                                 Start Lesson
                                             </Button>

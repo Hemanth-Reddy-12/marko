@@ -5,7 +5,7 @@ import { Activity, Server, Database, RefreshCw, CheckCircle2, XCircle } from "lu
 
 import { Badge } from "@/components/ui/badge";
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const baseUrl = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:5000" : "");
 
 interface HealthStatus {
     status: string;

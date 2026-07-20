@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useSession } from "@/lib/auth-client";
 import { Navigate } from "react-router-dom";
 import { LandingNavbar } from "@/features/landing/components/Navbar";
@@ -16,12 +17,16 @@ import { Footer } from "@/features/landing/components/Footer";
 export function LandingPage() {
     const { data: session } = useSession();
 
+    useEffect(() => {
+        document.title = "Project Marko | Autonomous AI Learning Platform";
+    }, []);
+
     if (session) {
         return <Navigate to="/dashboard" replace />;
     }
 
     return (
-        <div className="min-h-screen bg-background font-sans selection:bg-black selection:text-white flex flex-col">
+        <div className="min-h-screen bg-background font-sans selection:bg-primary selection:text-primary-foreground flex flex-col">
             <LandingNavbar />
             <main className="flex-grow w-full overflow-hidden">
                 <HeroComposition />

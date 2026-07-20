@@ -1,5 +1,5 @@
 import * as React from "react";
-import { User, Bell, Shield, Key, Moon, Sun, Monitor, LogOut } from "lucide-react";
+import { User, Bell, Shield, Key, Moon, Sun, Monitor, LogOut, Cpu } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { useSession, signOut } from "@/lib/auth-client";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/ThemeProvider";
+import { AiProviderSettings } from "@/features/settings/components/AiProviderSettings";
 
 const containerVariants = {
     animate: { transition: { staggerChildren: 0.05 } },
@@ -78,6 +79,7 @@ export function SettingsPage() {
 
     const tabs = [
         { id: "profile", label: "Profile", icon: User },
+        { id: "ai-providers", label: "AI Providers", icon: Cpu },
         { id: "preferences", label: "Preferences", icon: Monitor },
         { id: "notifications", label: "Notifications", icon: Bell },
         { id: "security", label: "Security", icon: Shield },
@@ -92,37 +94,44 @@ export function SettingsPage() {
         >
             {/* Header */}
             <motion.div variants={itemVariants} className="flex flex-col gap-2 border-b bauhaus-border pb-6 mt-4 border-l-0 border-r-0 border-t-0">
-                <h1 className="text-3xl font-heading font-semibold tracking-tight text-foreground uppercase">Settings</h1>
-                <p className="text-sm font-mono text-muted-foreground mt-1">Manage your account preferences and application settings.</p>
+                <div className="flex items-center gap-3 mb-1">
+                    <div className="size-4 bg-bauhaus-blue bauhaus-square shrink-0" />
+                    <h1 className="text-3xl font-heading font-black tracking-tight text-foreground uppercase">Settings</h1>
+                </div>
+                <p className="text-sm font-mono text-muted-foreground">Manage your account and configure AI providers.</p>
             </motion.div>
 
             <div className="flex flex-col md:flex-row gap-8 lg:gap-12 items-start mt-2">
-                {/* Sidebar Navigation */}
-                <motion.div variants={itemVariants} className="w-full md:w-64 shrink-0 flex flex-col gap-1">
-                    {tabs.map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={cn(
-                                "flex items-center gap-3 px-4 py-3 text-sm font-bold uppercase tracking-wider transition-all duration-200 border-l-4",
-                                activeTab === tab.id 
-                                    ? "border-bauhaus-blue bg-muted text-foreground" 
-                                    : "border-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                            )}
-                        >
-                            <tab.icon className={cn("size-4", activeTab === tab.id && "text-bauhaus-blue")} />
-                            {tab.label}
-                        </button>
-                    ))}
-                    
-                    <div className="h-1 bg-foreground my-4" />
-                    
+                {/* Sidebar Navigation — horizontal scroll on mobile, sidebar on md+ */}
+                <motion.div variants={itemVariants} className="w-full md:w-56 shrink-0">
+                    <nav className="flex md:flex-col gap-1 overflow-x-auto pb-1 md:pb-0">
+                        {tabs.map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                aria-current={activeTab === tab.id ? "page" : undefined}
+                                className={cn(
+                                    "flex items-center gap-2.5 px-3 py-2.5 md:px-4 md:py-3 text-xs sm:text-sm font-black uppercase tracking-wider transition-all duration-150 whitespace-nowrap shrink-0",
+                                    "md:border-l-4 border-b-2 md:border-b-0",
+                                    activeTab === tab.id
+                                        ? "border-bauhaus-blue bg-muted text-foreground"
+                                        : "border-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                                )}
+                            >
+                                <tab.icon className={cn("size-4 shrink-0", activeTab === tab.id && "text-bauhaus-blue")} />
+                                {tab.label}
+                            </button>
+                        ))}
+                    </nav>
+
+                    <div className="hidden md:block h-px bg-foreground my-4" />
+
                     <button
                         onClick={handleSignOut}
-                        className="flex items-center gap-3 px-4 py-3 text-sm font-bold uppercase tracking-wider transition-all duration-200 border-l-4 border-transparent text-destructive hover:bg-destructive/10"
+                        className="hidden md:flex items-center gap-2.5 px-4 py-3 text-xs font-black uppercase tracking-wider transition-all duration-150 border-l-4 border-transparent text-destructive hover:bg-destructive/10 w-full"
                     >
-                        <LogOut className="size-4" />
-                        Sign Out
+                        <LogOut className="size-4 shrink-0" />
+                        Sign out
                     </button>
                 </motion.div>
 
@@ -172,6 +181,8 @@ export function SettingsPage() {
                             </Card>
                         </div>
                     )}
+
+                    {activeTab === "ai-providers" && <AiProviderSettings />}
 
                     {activeTab === "preferences" && (
                         <div className="flex flex-col gap-8">
@@ -240,7 +251,7 @@ export function SettingsPage() {
                                     <div className="p-6 md:p-8 flex items-center justify-between hover:bg-muted/10 transition-colors border-b bauhaus-border border-t-0 border-l-0 border-r-0">
                                         <div className="space-y-1">
                                             <Label className="text-sm font-bold uppercase tracking-wider">Course Updates</Label>
-                                            <p className="text-xs text-muted-foreground font-mono">Receive emails when your AI generated courses are ready.</p>
+                                            <p className="text-xs text-muted-foreground font-mono">Get an email when your AI-generated course or lesson is ready.</p>
                                         </div>
                                         <Switch
                                             checked={settings.courseUpdates}
@@ -251,7 +262,7 @@ export function SettingsPage() {
                                     <div className="p-6 md:p-8 flex items-center justify-between hover:bg-muted/10 transition-colors border-b bauhaus-border border-t-0 border-l-0 border-r-0">
                                         <div className="space-y-1">
                                             <Label className="text-sm font-bold uppercase tracking-wider">Weekly Report</Label>
-                                            <p className="text-xs text-muted-foreground font-mono">A weekly email summarizing your learning progress.</p>
+                                            <p className="text-xs text-muted-foreground font-mono">Weekly summary of lessons completed, quizzes passed, and time studied.</p>
                                         </div>
                                         <Switch
                                             checked={settings.weeklyReport}
@@ -262,7 +273,7 @@ export function SettingsPage() {
                                     <div className="p-6 md:p-8 flex items-center justify-between hover:bg-muted/10 transition-colors">
                                         <div className="space-y-1">
                                             <Label className="text-sm font-bold uppercase tracking-wider">System Alerts</Label>
-                                            <p className="text-xs text-muted-foreground font-mono">Important notifications about platform maintenance.</p>
+                                            <p className="text-xs text-muted-foreground font-mono">Critical alerts about outages or scheduled maintenance windows.</p>
                                         </div>
                                         <Switch
                                             checked={settings.systemAlerts}
@@ -305,8 +316,8 @@ export function SettingsPage() {
                                             <Shield className="size-4 text-bauhaus-red" />
                                             <h3 className="text-sm font-bold uppercase tracking-wider text-destructive">Danger Zone</h3>
                                         </div>
-                                        <p className="text-xs text-muted-foreground font-mono">Once you delete your account, there is no going back. Please be certain.</p>
-                                        <Button variant="outline" className="bauhaus-square bauhaus-border border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground mt-2 font-bold uppercase tracking-wider">
+                                        <p className="text-xs text-muted-foreground font-mono">Permanently deletes your account, all courses, and learning data. This cannot be undone.</p>
+                                        <Button variant="outline" className="bauhaus-square bauhaus-border border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground mt-2 font-black uppercase tracking-wider">
                                             Delete Account
                                         </Button>
                                     </div>

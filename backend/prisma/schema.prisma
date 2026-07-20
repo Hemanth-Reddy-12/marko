@@ -51,22 +51,23 @@ enum AgentRunStatus {
 }
 
 model User {
-  id            String        @id
-  name          String
-  email         String        @unique
-  emailVerified Boolean       @default(false)
-  image         String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  courses       Course[]
-  quizAttempts  QuizAttempt[]
-  interviews    Interview[]
-  chatSessions  ChatSession[]
-  agentRuns          AgentRun[]
-  notifications      Notification[]
+  id                   String            @id
+  name                 String
+  email                String            @unique
+  emailVerified        Boolean           @default(false)
+  image                String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  sessions             Session[]
+  accounts             Account[]
+  courses              Course[]
+  quizAttempts         QuizAttempt[]
+  interviews           Interview[]
+  chatSessions         ChatSession[]
+  agentRuns            AgentRun[]
+  notifications        Notification[]
   notificationSettings Json?
+  aiProviderConfig     AiProviderConfig?
 
   @@map("user")
 }
@@ -119,19 +120,19 @@ model Verification {
 }
 
 model Course {
-  id           String       @id @default(cuid())
-  title        String
-  description  String?
-  durationDays Int
-  estimateTime Int @default(0)
-  status       CourseStatus
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  id            String       @id @default(cuid())
+  title         String
+  description   String?
+  durationDays  Int
+  estimateTime  Int          @default(0)
+  status        CourseStatus
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
   lastVisitedAt DateTime?
-  userId       String
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  lessons      Lesson[]
-  interview    Interview?
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessons       Lesson[]
+  interview     Interview?
 
   @@index([userId])
 }
@@ -142,7 +143,7 @@ model Lesson {
   order            Int
   deadline         DateTime?
   scheduledDate    DateTime?
-  estimateTime     Int @default(0)
+  estimateTime     Int              @default(0)
   status           LessonStatus
   generationStatus GenerationStatus
   content          String?          @db.Text
@@ -248,4 +249,19 @@ model Notification {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+model AiProviderConfig {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeProvider   String?
+  activeModel      String?
+  geminiApiKey     String?
+  openaiApiKey     String?
+  openaiBaseUrl    String?
+  anthropicApiKey  String?
+  anthropicBaseUrl String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }

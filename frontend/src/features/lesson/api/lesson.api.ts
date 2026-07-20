@@ -22,7 +22,7 @@ export const pollLesson = async (
     while (true) {
         try {
             // Using fetch directly to catch 202 without throwing
-            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/courses/${courseId}/lessons/${lessonId}`, {
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:5000" : "")}/api/courses/${courseId}/lessons/${lessonId}`, {
                 credentials: "include"
             });
 

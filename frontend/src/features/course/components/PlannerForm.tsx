@@ -6,7 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import { FieldGroup, Field, FieldLabel, FieldDescription, FieldError } from "@/components/ui/field";
 import { fetchApi } from "@/lib/api";
-import { AlertCircle, ArrowRight } from "lucide-react";
+import { AlertCircle, ArrowRight, Sparkles } from "lucide-react";
+import { Icon } from "@iconify/react";
 import { cn } from "@/lib/utils";
 
 interface PlannerFormProps {
@@ -15,11 +16,39 @@ interface PlannerFormProps {
     onCourseCreated: (course: any) => void;
 }
 
+interface AiConfig {
+    activeProvider: string;
+    activeModel: string;
+}
+
+export function getProviderIcon(provider?: string): string {
+    if (provider === "openai") return "logos:openai-icon";
+    if (provider === "anthropic") return "logos:anthropic-icon";
+    if (provider === "mock") return "ph:cpu-bold";
+    return "logos:google-gemini";
+}
+
+export function getProviderName(provider?: string): string {
+    if (provider === "openai") return "OpenAI";
+    if (provider === "anthropic") return "Anthropic";
+    if (provider === "mock") return "Mock Engine";
+    return "Google Gemini";
+}
+
 export function PlannerForm({ isOpen, onClose, onCourseCreated }: PlannerFormProps) {
     const [goal, setGoal] = React.useState("");
     const [durationDays, setDurationDays] = React.useState(5);
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
+    const [aiConfig, setAiConfig] = React.useState<AiConfig | null>(null);
+
+    React.useEffect(() => {
+        if (isOpen) {
+            fetchApi<AiConfig>("/api/ai/config")
+                .then((cfg) => setAiConfig(cfg))
+                .catch(() => setAiConfig(null));
+        }
+    }, [isOpen]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -62,7 +91,7 @@ export function PlannerForm({ isOpen, onClose, onCourseCreated }: PlannerFormPro
             <DialogContent className="sm:max-w-xl bg-card bauhaus-border rounded-none p-0 overflow-hidden gap-0">
                 <div className="bg-bauhaus-red/10 border-b-2 border-foreground p-6 sm:p-8 flex flex-col gap-2">
                     <DialogTitle className="font-heading font-bold uppercase tracking-tight text-foreground flex items-center gap-3 text-2xl">
-                        <div className="size-4 bg-bauhaus-red bauhaus-circle"></div>
+                        <div className="size-4 bg-bauhaus-red bauhaus-square shrink-0"></div>
                         <span>Create Course</span>
                     </DialogTitle>
                     <DialogDescription className="text-muted-foreground font-medium text-sm">
@@ -71,6 +100,21 @@ export function PlannerForm({ isOpen, onClose, onCourseCreated }: PlannerFormPro
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex flex-col p-6 sm:p-8 gap-8">
+                    {/* Active Model Indicator */}
+                    {aiConfig && (
+                        <div className="flex items-center justify-between text-xs font-mono text-foreground bg-muted/40 p-3.5 bauhaus-square bauhaus-border border-border">
+                            <div className="flex items-center gap-2">
+                                <Icon icon={getProviderIcon(aiConfig.activeProvider)} className="size-4 shrink-0" />
+                                <span className="font-bold uppercase tracking-wide">
+                                    AI Engine: {getProviderName(aiConfig.activeProvider)}
+                                </span>
+                            </div>
+                            <span className="font-bold tracking-wide text-muted-foreground border-l border-border pl-3">
+                                {aiConfig.activeModel}
+                            </span>
+                        </div>
+                    )}
+
                     {error && !hasGoalError && (
                         <div className="text-xs font-bold uppercase tracking-widest text-bauhaus-red bg-bauhaus-red/10 p-3 flex items-center gap-2 bauhaus-border">
                             <AlertCircle className="size-4 shrink-0" />
@@ -85,7 +129,7 @@ export function PlannerForm({ isOpen, onClose, onCourseCreated }: PlannerFormPro
                             </FieldLabel>
                             <Textarea
                                 id="goal"
-                                placeholder="E.g., Master Docker and Kubernetes..."
+                                placeholder="E.g., Master Docker, Kubernetes and Microservices..."
                                 value={goal}
                                 onChange={(e) => setGoal(e.target.value)}
                                 disabled={loading}
@@ -141,8 +185,11 @@ export function PlannerForm({ isOpen, onClose, onCourseCreated }: PlannerFormPro
                         >
                             {loading ? (
                                 <>
-                                    <Spinner data-icon="inline-start" className="text-white animate-spin size-4" />
-                                    <span>Planning...</span>
+                                    <Icon
+                                        icon={getProviderIcon(aiConfig?.activeProvider)}
+                                        className="size-4 animate-spin text-white"
+                                    />
+                                    <span>Planning with {aiConfig?.activeModel || "AI"}...</span>
                                 </>
                             ) : (
                                 <>

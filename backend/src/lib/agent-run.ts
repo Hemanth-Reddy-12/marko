@@ -17,7 +17,7 @@ export async function runAgent<T>(
     schema: any,
     schemaName = "output"
 ): Promise<T> {
-    const provider = getChatProvider();
+    const provider = await getChatProvider(context.userId);
     
     // Find attempt number
     const prevRuns = await prisma.agentRun.count({

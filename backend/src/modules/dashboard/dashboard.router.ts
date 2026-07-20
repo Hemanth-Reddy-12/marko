@@ -1,5 +1,14 @@
 import { Router } from "express";
-import { getDailySchedule, getActivityFeed, getUpcomingLessons, getUpcomingQuizzes, getQuizHistory, getRecentlyVisitedCourses, getCompletedLessons, getDashboardStats } from "./dashboard.controller.js";
+import {
+    getDailySchedule,
+    getActivityFeed,
+    getUpcomingLessons,
+    getUpcomingQuizzes,
+    getQuizHistory,
+    getRecentlyVisitedCourses,
+    getCompletedLessons,
+    getDashboardStats,
+} from "./dashboard.controller.js";
 import { authMiddleware } from "../../middleware/auth.js";
 
 const router = Router();

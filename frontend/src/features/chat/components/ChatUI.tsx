@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { useWebSocket } from "../../../hooks/useWebSocket";
+import { useSession } from "../../../lib/auth-client";
+import { getSessionMessages, sendSessionMessage } from "../api/chat.api";
 import { Button } from "../../../components/ui/button";
 import { ScrollArea } from "../../../components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
@@ -47,7 +48,9 @@ const msgVariants = {
 };
 
 export function ChatUI({ sessionId }: ChatUIProps) {
-    const { socket, isConnected, userId } = useWebSocket(sessionId);
+    const { data: sessionData } = useSession();
+    const userId = sessionData?.user?.id;
+    const [isConnected, setIsConnected] = useState(true);
     const navigate = useNavigate();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState("");
@@ -58,28 +61,32 @@ export function ChatUI({ sessionId }: ChatUIProps) {
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
-        if (!socket) return;
-
-        socket.on("new_message", (msg: ChatMessage) => {
-            setMessages((prev) => [...prev, msg]);
-            setIsTyping(false);
-        });
-
-        socket.on("typing", () => {
-            setIsTyping(true);
-        });
-
-        socket.on("interview_complete", (data: any) => {
-            setInterviewComplete(true);
-            setFeedback(data);
-        });
-
-        return () => {
-            socket.off("new_message");
-            socket.off("typing");
-            socket.off("interview_complete");
+        if (!sessionId) return;
+        
+        const loadMessages = async () => {
+            try {
+                setIsConnected(true);
+                setIsTyping(true);
+                const data = await getSessionMessages(sessionId);
+                setMessages(data.messages);
+                if (data.isComplete) {
+                    setInterviewComplete(true);
+                    setFeedback({
+                        score: data.score,
+                        passed: data.passed,
+                        feedbackData: data.feedbackData,
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to load messages", err);
+                setIsConnected(false);
+            } finally {
+                setIsTyping(false);
+            }
         };
-    }, [socket]);
+
+        loadMessages();
+    }, [sessionId]);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -94,15 +101,35 @@ export function ChatUI({ sessionId }: ChatUIProps) {
         }
     }, [isConnected, interviewComplete]);
 
-    const handleSend = () => {
-        if (!input.trim() || !socket || interviewComplete) return;
+    const handleSend = async () => {
+        if (!input.trim() || interviewComplete) return;
 
-        const userMsg: ChatMessage = { role: "user", content: input };
+        const userMsgText = input;
+        const userMsg: ChatMessage = { role: "user", content: userMsgText };
         setMessages((prev) => [...prev, userMsg]);
-
-        socket.emit("send_message", { sessionId, content: input, userId });
         setInput("");
         setIsTyping(true);
+        setIsConnected(true);
+
+        try {
+            const data = await sendSessionMessage(sessionId, userMsgText);
+            if (data.assistantMessage) {
+                setMessages((prev) => [...prev, data.assistantMessage!]);
+            }
+            if (data.isComplete) {
+                setInterviewComplete(true);
+                setFeedback({
+                    score: data.score,
+                    passed: data.passed,
+                    feedbackData: data.feedbackData,
+                });
+            }
+        } catch (err) {
+            console.error("Failed to send message", err);
+            setIsConnected(false);
+        } finally {
+            setIsTyping(false);
+        }
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

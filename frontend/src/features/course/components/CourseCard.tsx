@@ -3,7 +3,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { BookOpen, Calendar, ChevronRight, Loader2, AlertCircle, Trash2, Clock } from "lucide-react";
+import { BookOpen, ChevronRight, Loader2, AlertCircle, Clock } from "lucide-react";
+import { Icon } from "@iconify/react";
+import { fetchApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 export interface Lesson {
@@ -33,6 +35,13 @@ const courseStatusConfig: Record<Course["status"], { label: string; className: s
     FAILED: { label: "Failed", className: "bg-destructive/15 text-destructive" },
 };
 
+function getProviderIcon(provider?: string): string {
+    if (provider === "openai") return "logos:openai-icon";
+    if (provider === "anthropic") return "logos:anthropic-icon";
+    if (provider === "mock") return "ph:cpu-bold";
+    return "logos:google-gemini";
+}
+
 interface CourseCardProps {
     course: Course;
     onViewCourse: (courseId: string) => void;
@@ -43,6 +52,16 @@ export function CourseCard({ course, onViewCourse }: CourseCardProps) {
     const isGenerating = course.status === "GENERATING";
     const isFailed = course.status === "FAILED";
     const statusBadge = courseStatusConfig[course.status] ?? courseStatusConfig.ACTIVE;
+
+    const [aiConfig, setAiConfig] = React.useState<{ activeProvider: string; activeModel: string } | null>(null);
+
+    React.useEffect(() => {
+        if (isGenerating) {
+            fetchApi<{ activeProvider: string; activeModel: string }>("/api/ai/config")
+                .then((cfg) => setAiConfig(cfg))
+                .catch(() => null);
+        }
+    }, [isGenerating]);
 
     const completedLessons = course.lessons?.filter(l => l.status === "COMPLETED").length || 0;
     const totalLessons = course.lessons?.length || 0;
@@ -60,13 +79,19 @@ export function CourseCard({ course, onViewCourse }: CourseCardProps) {
     return (
         <Card className={cn(
             "bg-card bauhaus-border shadow-none rounded-none overflow-hidden transition-all duration-200 flex flex-col h-full relative cursor-pointer hover:-translate-y-1 hover:translate-x-1 hover:bauhaus-shadow",
-            isGenerating && "opacity-80 pointer-events-none"
+            isGenerating && "opacity-90 pointer-events-none"
         )} onClick={() => !isGenerating && onViewCourse(course.id)}>
             {isGenerating && (
-                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center z-10 gap-3 p-4 text-center">
-                    <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                <div className="absolute inset-0 bg-background/85 backdrop-blur-sm flex flex-col items-center justify-center z-10 gap-3 p-4 text-center">
+                    <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 text-primary animate-spin" />
+                        <Icon icon={getProviderIcon(aiConfig?.activeProvider)} className="size-5 shrink-0" />
+                    </div>
                     <div className="flex flex-col gap-1">
-                        <p className="text-xs font-semibold text-foreground uppercase tracking-widest">Generating Course</p>
+                        <p className="text-xs font-black text-foreground uppercase tracking-wider">Generating Course</p>
+                        <p className="text-[11px] font-mono text-muted-foreground uppercase tracking-widest">
+                            {aiConfig?.activeModel ? `Powered by ${aiConfig.activeModel}` : "Autonomous AI Planning..."}
+                        </p>
                     </div>
                 </div>
             )}

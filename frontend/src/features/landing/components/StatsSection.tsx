@@ -7,7 +7,7 @@ const stats = [
     { value: 4, suffix: "", label: "AI Agents", color: "text-bauhaus-red" },
     { value: 100, suffix: "%", label: "Structured Output", color: "text-bauhaus-blue" },
     { value: 0, suffix: "ms", prefix: "<10", label: "Realtime Engine", color: "text-bauhaus-yellow" },
-    { value: 1000, suffix: "+", label: "Lessons Generated", color: "text-black" }
+    { value: 1000, suffix: "+", label: "Lessons Generated", color: "text-foreground" }
 ];
 
 function AnimatedNumber({ value }: { value: number }) {
@@ -27,8 +27,8 @@ function AnimatedNumber({ value }: { value: number }) {
 
 export function StatsSection() {
     return (
-        <section className="w-full bg-white border-b-4 border-black py-32 px-6">
-            <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 divide-y-4 md:divide-y-0 md:divide-x-4 divide-black">
+        <section className="w-full bg-background border-b-4 border-border py-32 px-6">
+            <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 divide-y-4 md:divide-y-0 md:divide-x-4 divide-border">
                 {stats.map((stat, idx) => (
                     <motion.div 
                         key={idx}
@@ -43,8 +43,8 @@ export function StatsSection() {
                             <AnimatedNumber value={stat.value} />
                             {stat.suffix}
                         </div>
-                        <div className="w-16 h-2 bg-black my-6" />
-                        <span className="text-xl font-bold uppercase tracking-widest text-black">
+                        <div className="w-16 h-2 bg-border my-6" />
+                        <span className="text-xl font-bold uppercase tracking-widest text-foreground">
                             {stat.label}
                         </span>
                     </motion.div>

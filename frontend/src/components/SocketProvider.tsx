@@ -15,7 +15,7 @@ const SocketContext = React.createContext<SocketContextValue>({
 
 export const useSocket = () => React.useContext(SocketContext);
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const SOCKET_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:5000" : "");
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
     const { data: session } = useSession();
@@ -29,6 +29,11 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
                 setSocket(null);
                 setIsConnected(false);
             }
+            return;
+        }
+
+        if (!SOCKET_URL) {
+            console.log("[Socket] WebSockets are disabled in production serverless mode.");
             return;
         }
 
@@ -53,7 +58,9 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
                 position: "bottom-right",
             });
             // We could also dispatch a custom event here to trigger re-fetches
-            window.dispatchEvent(new CustomEvent("marko-notification-received"));
+            window.dispatchEvent(
+                new CustomEvent("marko-notification-received"),
+            );
         });
 
         setSocket(socketInstance);

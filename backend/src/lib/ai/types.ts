@@ -35,7 +35,7 @@ export interface ChatProvider {
     generateStructured<T = any>(
         req: ChatRequest,
         schema: any, // JSON schema object
-        schemaName?: string
+        schemaName?: string,
     ): Promise<T>;
 }
 
@@ -45,5 +45,14 @@ export class ProviderNotConfiguredError extends Error {
             `AI provider "${provider}" is not configured: missing ${missing}`,
         );
         this.name = "ProviderNotConfiguredError";
+    }
+}
+
+export class InvalidApiKeyError extends Error {
+    constructor(provider: string, details?: string) {
+        super(
+            `Invalid API key for AI provider "${provider}". Please update your API key in Settings → AI Providers.${details ? ` (${details})` : ""}`,
+        );
+        this.name = "InvalidApiKeyError";
     }
 }

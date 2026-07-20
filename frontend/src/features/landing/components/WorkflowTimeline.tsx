@@ -22,7 +22,7 @@ function BookOpenIcon(props: any) {
 
 export function WorkflowTimeline() {
     return (
-        <section className="w-full bg-bauhaus-yellow border-b-4 border-black py-20 px-6 overflow-hidden">
+        <section className="w-full bg-bauhaus-yellow border-b-4 border-border py-20 px-6 overflow-hidden">
             <div className="max-w-[1440px] mx-auto">
                 <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-black mb-16 text-center">
                     HOW IT WORKS
@@ -39,15 +39,15 @@ export function WorkflowTimeline() {
                                 whileInView={{ opacity: 1, scale: 1 }}
                                 viewport={{ once: true, margin: "-50px" }}
                                 transition={{ type: "spring", stiffness: 200, delay: idx * 0.15 }}
-                                className="flex flex-col items-center gap-4 bg-white p-6 border-4 border-black shadow-[8px_8px_0px_rgba(17,17,17,1)]"
+                                className="flex flex-col items-center gap-4 bg-card p-6 border-4 border-border shadow-[8px_8px_0px_0px_var(--foreground)]"
                             >
-                                <div className="bg-black text-white p-4 rounded-full">
+                                <div className="bg-primary text-primary-foreground p-4 rounded-full">
                                     <step.icon className="size-8" />
                                 </div>
-                                <span className="text-xl font-black uppercase tracking-widest text-black">{step.label}</span>
+                                <span className="text-xl font-black uppercase tracking-widest text-card-foreground">{step.label}</span>
                             </motion.div>
                             
-                            {/* Arrow connecting to next block (mobile vertical, desktop horizontal arrow is implied by the background line but we can add small arrows) */}
+                            {/* Arrow connecting to next block */}
                             {idx < steps.length - 1 && (
                                 <motion.div 
                                     initial={{ opacity: 0 }}
