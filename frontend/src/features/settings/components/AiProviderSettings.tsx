@@ -364,6 +364,7 @@ export function AiProviderSettings() {
                                                     className={cn("size-5", p.id === "openai" && isSelected && "brightness-200")}
                                                 />
                                             </div>
+                                            <div className="flex items-center gap-1">
                                                 {p.hasKey && (
                                                     <ShieldCheck className="size-3.5 opacity-80" />
                                                 )}
