@@ -63,13 +63,16 @@ export function AppSidebar() {
         navigate("/login");
     };
 
-    const closeMobile = React.useCallback(() => setMobileOpen(false), [setMobileOpen]);
+    const closeMobile = React.useCallback(
+        () => setMobileOpen(false),
+        [setMobileOpen],
+    );
 
     const renderLogo = () => (
         <div
             className={cn(
                 "border-b-2 border-foreground bg-background h-16 flex items-center flex-shrink-0",
-                collapsed ? "justify-center p-3" : "px-6 py-3"
+                collapsed ? "justify-center p-3" : "px-6 py-3",
             )}
         >
             {collapsed ? (
@@ -83,11 +86,17 @@ export function AppSidebar() {
     );
 
     const renderNav = () => (
-        <nav className={cn("flex flex-col gap-1", collapsed ? "px-2 items-center" : "px-3")}>
+        <nav
+            className={cn(
+                "flex flex-col gap-1",
+                collapsed ? "px-2 items-center" : "px-3",
+            )}
+        >
             {primaryNav.map((item) => {
                 const isActive =
                     location.pathname === item.path ||
-                    (item.path !== "/dashboard" && location.pathname.startsWith(item.path));
+                    (item.path !== "/dashboard" &&
+                        location.pathname.startsWith(item.path));
                 return (
                     <Link
                         key={item.path}
@@ -99,11 +108,14 @@ export function AppSidebar() {
                             collapsed && "justify-center px-0 w-12",
                             isActive
                                 ? `${item.color} text-white font-bold border-foreground bauhaus-border`
-                                : "text-foreground hover:bg-muted font-bold border-b-foreground/20 hover:border-b-foreground"
+                                : "text-foreground hover:bg-muted font-bold border-b-foreground/20 hover:border-b-foreground",
                         )}
                     >
                         <item.icon
-                            className={cn("size-5 flex-shrink-0", isActive ? "text-white" : "text-foreground")}
+                            className={cn(
+                                "size-5 flex-shrink-0",
+                                isActive ? "text-white" : "text-foreground",
+                            )}
                             strokeWidth={isActive ? 3 : 2}
                         />
                         {!collapsed && (
@@ -122,7 +134,7 @@ export function AppSidebar() {
             <button
                 className={cn(
                     "flex items-center w-full h-16 px-4 hover:bg-bauhaus-blue hover:text-white transition-none cursor-pointer focus:outline-none",
-                    collapsed && "justify-center px-0"
+                    collapsed && "justify-center px-0",
                 )}
                 onClick={() => {
                     const menu = document.getElementById("profile-menu");
@@ -131,10 +143,16 @@ export function AppSidebar() {
             >
                 <div className="size-8 bauhaus-border flex-shrink-0 bg-white overflow-hidden">
                     {session?.user?.image ? (
-                        <img src={session.user.image} alt="Avatar" className="w-full h-full object-cover" />
+                        <img
+                            src={session.user.image}
+                            alt="Avatar"
+                            className="w-full h-full object-cover"
+                        />
                     ) : (
                         <div className="w-full h-full bg-muted flex items-center justify-center font-bold text-sm">
-                            {(session?.user?.name || "GUEST").charAt(0).toUpperCase()}
+                            {(session?.user?.name || "GUEST")
+                                .charAt(0)
+                                .toUpperCase()}
                         </div>
                     )}
                 </div>
@@ -151,7 +169,10 @@ export function AppSidebar() {
             </button>
 
             {/* Dropdown Menu Overlay */}
-            <div id="profile-menu" className="hidden absolute bottom-full left-0 w-full min-w-56 bg-card bauhaus-border shadow-none border-b-0 z-50">
+            <div
+                id="profile-menu"
+                className="hidden absolute bottom-full left-0 w-full min-w-56 bg-card bauhaus-border shadow-none border-b-0 z-50"
+            >
                 <Link
                     to="/settings"
                     onClick={closeMobile}
@@ -174,7 +195,9 @@ export function AppSidebar() {
     const sidebarBody = (
         <>
             {renderLogo()}
-            <div className="flex-1 overflow-y-auto scrollbar-none py-4">{renderNav()}</div>
+            <div className="flex-1 overflow-y-auto scrollbar-none py-4">
+                {renderNav()}
+            </div>
             {renderProfile()}
         </>
     );
@@ -188,14 +211,16 @@ export function AppSidebar() {
                     aria-hidden="true"
                     className={cn(
                         "fixed inset-0 z-40 bg-black/50 transition-opacity duration-200",
-                        mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+                        mobileOpen
+                            ? "opacity-100"
+                            : "opacity-0 pointer-events-none",
                     )}
                 />
                 {/* Drawer */}
                 <aside
                     className={cn(
                         "fixed top-0 left-0 z-50 flex flex-col w-64 h-screen border-r-2 border-foreground bg-sidebar transition-transform duration-200 ease-linear",
-                        mobileOpen ? "translate-x-0" : "-translate-x-full"
+                        mobileOpen ? "translate-x-0" : "-translate-x-full",
                     )}
                 >
                     {sidebarBody}
@@ -208,7 +233,7 @@ export function AppSidebar() {
         <aside
             className={cn(
                 "flex flex-col border-r-2 border-foreground bg-sidebar h-screen sticky top-0 transition-[width] duration-200 ease-linear",
-                collapsed ? "w-16" : "w-64"
+                collapsed ? "w-16" : "w-64",
             )}
         >
             {sidebarBody}

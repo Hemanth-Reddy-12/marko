@@ -75,17 +75,30 @@ export function AiProviderSettings() {
     const [isSavingProvider, setIsSavingProvider] = useState(false);
     const [isTesting, setIsTesting] = useState(false);
     const [isFetchingModels, setIsFetchingModels] = useState(false);
-    const [testStatus, setTestStatus] = useState<{ success?: boolean; message?: string } | null>(null);
+    const [testStatus, setTestStatus] = useState<{
+        success?: boolean;
+        message?: string;
+    } | null>(null);
 
     // Per-provider form state
-    const [geminiForm, setGeminiForm] = useState<ProviderFormState>({ ...DEFAULT_FORM });
-    const [openaiForm, setOpenaiForm] = useState<ProviderFormState>({ ...DEFAULT_FORM, baseUrl: "https://api.openai.com/v1" });
-    const [anthropicForm, setAnthropicForm] = useState<ProviderFormState>({ ...DEFAULT_FORM, baseUrl: "https://api.anthropic.com" });
+    const [geminiForm, setGeminiForm] = useState<ProviderFormState>({
+        ...DEFAULT_FORM,
+    });
+    const [openaiForm, setOpenaiForm] = useState<ProviderFormState>({
+        ...DEFAULT_FORM,
+        baseUrl: "https://api.openai.com/v1",
+    });
+    const [anthropicForm, setAnthropicForm] = useState<ProviderFormState>({
+        ...DEFAULT_FORM,
+        baseUrl: "https://api.anthropic.com",
+    });
 
     const [isCustomModel, setIsCustomModel] = useState(false);
     const [customModelInput, setCustomModelInput] = useState("");
 
-    useEffect(() => { loadConfig(); }, []);
+    useEffect(() => {
+        loadConfig();
+    }, []);
 
     useEffect(() => {
         if (config.activeProvider) loadModels(config.activeProvider);
@@ -98,28 +111,44 @@ export function AiProviderSettings() {
             setConfig(data);
             if (data.activeModel) setCustomModelInput(data.activeModel);
             // Pre-fill base URLs from stored config
-            if (data.openaiBaseUrl) setOpenaiForm(p => ({ ...p, baseUrl: data.openaiBaseUrl }));
-            if (data.anthropicBaseUrl) setAnthropicForm(p => ({ ...p, baseUrl: data.anthropicBaseUrl }));
+            if (data.openaiBaseUrl)
+                setOpenaiForm((p) => ({ ...p, baseUrl: data.openaiBaseUrl }));
+            if (data.anthropicBaseUrl)
+                setAnthropicForm((p) => ({
+                    ...p,
+                    baseUrl: data.anthropicBaseUrl,
+                }));
         } catch (e: any) {
-            toast.error("Could not load AI configuration — check your connection and try again.");
+            toast.error(
+                "Could not load AI configuration — check your connection and try again.",
+            );
         } finally {
             setIsLoadingConfig(false);
         }
     };
 
-    const loadModels = async (provider: string, apiKeyOverride?: string, baseUrlOverride?: string) => {
+    const loadModels = async (
+        provider: string,
+        apiKeyOverride?: string,
+        baseUrlOverride?: string,
+    ) => {
         try {
             setIsFetchingModels(true);
             let query = `/api/ai/models?provider=${provider}`;
-            if (baseUrlOverride) query += `&baseURL=${encodeURIComponent(baseUrlOverride)}`;
-            if (apiKeyOverride) query += `&apiKey=${encodeURIComponent(apiKeyOverride)}`;
+            if (baseUrlOverride)
+                query += `&baseURL=${encodeURIComponent(baseUrlOverride)}`;
+            if (apiKeyOverride)
+                query += `&apiKey=${encodeURIComponent(apiKeyOverride)}`;
 
             const data = await fetchApi<{ models: string[] }>(query);
             if (data.models && data.models.length > 0) {
                 setAvailableModels(data.models);
-                if (!config.activeModel || !data.models.includes(config.activeModel)) {
+                if (
+                    !config.activeModel ||
+                    !data.models.includes(config.activeModel)
+                ) {
                     const firstModel = data.models[0]!;
-                    setConfig(prev => ({ ...prev, activeModel: firstModel }));
+                    setConfig((prev) => ({ ...prev, activeModel: firstModel }));
                     setCustomModelInput(firstModel);
                 }
             } else {
@@ -127,7 +156,9 @@ export function AiProviderSettings() {
             }
         } catch {
             setAvailableModels([]);
-            toast.error(`Could not fetch models for ${provider}. Check that your API key and base URL are correct.`);
+            toast.error(
+                `Could not fetch models for ${provider}. Check that your API key and base URL are correct.`,
+            );
         } finally {
             setIsFetchingModels(false);
         }
@@ -141,7 +172,7 @@ export function AiProviderSettings() {
                 method: "PUT",
                 body: JSON.stringify({ activeProvider: provider }),
             });
-            setConfig(prev => ({ ...prev, ...res }));
+            setConfig((prev) => ({ ...prev, ...res }));
         } catch (e: any) {
             toast.error("Could not switch provider: " + e.message);
         } finally {
@@ -156,7 +187,7 @@ export function AiProviderSettings() {
                 method: "PUT",
                 body: JSON.stringify({ activeModel: model }),
             });
-            setConfig(prev => ({ ...prev, ...res }));
+            setConfig((prev) => ({ ...prev, ...res }));
         } catch (e: any) {
             toast.error("Could not save model: " + e.message);
         }
@@ -167,58 +198,66 @@ export function AiProviderSettings() {
         provider: "gemini" | "openai" | "anthropic",
         apiKey: string,
         baseUrl?: string,
-        setForm?: React.Dispatch<React.SetStateAction<ProviderFormState>>
+        setForm?: React.Dispatch<React.SetStateAction<ProviderFormState>>,
     ) => {
         if (!apiKey.trim()) {
             toast.error("Enter a valid API key before saving.");
             return;
         }
 
-        setForm?.(p => ({ ...p, isSaving: true }));
+        setForm?.((p) => ({ ...p, isSaving: true }));
         try {
             const body: Record<string, string> = {
                 activeProvider: provider,
-                [`${provider === "openai" ? "openai" : provider}ApiKey`]: apiKey.trim(),
+                [`${provider === "openai" ? "openai" : provider}ApiKey`]:
+                    apiKey.trim(),
             };
-            if (provider === "openai" && baseUrl) body.openaiBaseUrl = baseUrl.trim();
-            if (provider === "anthropic" && baseUrl) body.anthropicBaseUrl = baseUrl.trim();
+            if (provider === "openai" && baseUrl)
+                body.openaiBaseUrl = baseUrl.trim();
+            if (provider === "anthropic" && baseUrl)
+                body.anthropicBaseUrl = baseUrl.trim();
 
             const res = await fetchApi<AiConfig>("/api/ai/config", {
                 method: "PUT",
                 body: JSON.stringify(body),
             });
-            setConfig(prev => ({ ...prev, ...res }));
+            setConfig((prev) => ({ ...prev, ...res }));
             toast.success(`${provider} API key saved and encrypted.`);
             // Clear the input now that the key is stored
-            setForm?.(p => ({ ...p, apiKey: "", showKey: false }));
+            setForm?.((p) => ({ ...p, apiKey: "", showKey: false }));
             // Load models for the new provider
             loadModels(provider, undefined, baseUrl);
         } catch (e: any) {
             if (e.message?.includes("409") || e.status === 409) {
-                toast.error(`A ${provider} key is already stored. Delete the existing key first.`);
+                toast.error(
+                    `A ${provider} key is already stored. Delete the existing key first.`,
+                );
             } else {
                 toast.error("Could not save API key: " + e.message);
             }
         } finally {
-            setForm?.(p => ({ ...p, isSaving: false }));
+            setForm?.((p) => ({ ...p, isSaving: false }));
         }
     };
 
     /** Delete a specific provider's key */
     const handleDeleteKey = async (
         provider: "gemini" | "openai" | "anthropic",
-        setForm?: React.Dispatch<React.SetStateAction<ProviderFormState>>
+        setForm?: React.Dispatch<React.SetStateAction<ProviderFormState>>,
     ) => {
-        setForm?.(p => ({ ...p, isDeleting: true }));
+        setForm?.((p) => ({ ...p, isDeleting: true }));
         try {
-            const res = await fetchApi<AiConfig>(`/api/ai/config/key/${provider}`, { method: "DELETE" });
-            setConfig(prev => ({ ...prev, ...res }));
+            const res = await fetchApi<AiConfig>(
+                `/api/ai/config/key/${provider}`,
+                { method: "DELETE" },
+            );
+            setConfig((prev) => ({ ...prev, ...res }));
             toast.success(`${provider} API key removed.`);
             setAvailableModels([]);
         } catch (e: any) {
             toast.error("Could not remove API key: " + e.message);
         } finally {
-            setForm?.(p => ({ ...p, isDeleting: false }));
+            setForm?.((p) => ({ ...p, isDeleting: false }));
         }
     };
 
@@ -227,25 +266,35 @@ export function AiProviderSettings() {
             setIsTesting(true);
             setTestStatus(null);
 
-            const res = await fetchApi<{ success: boolean; message: string }>("/api/ai/test-connection", {
-                method: "POST",
-                body: JSON.stringify({
-                    provider: config.activeProvider,
-                    // Send masked key — server will decode from DB
-                    apiKey: (() => {
-                        if (config.activeProvider === "gemini") return config.geminiApiKey;
-                        if (config.activeProvider === "openai") return config.openaiApiKey;
-                        if (config.activeProvider === "anthropic") return config.anthropicApiKey;
-                        return "";
-                    })(),
-                    baseURL: (() => {
-                        if (config.activeProvider === "openai") return config.openaiBaseUrl;
-                        if (config.activeProvider === "anthropic") return config.anthropicBaseUrl;
-                        return "";
-                    })(),
-                    model: isCustomModel ? customModelInput : config.activeModel,
-                }),
-            });
+            const res = await fetchApi<{ success: boolean; message: string }>(
+                "/api/ai/test-connection",
+                {
+                    method: "POST",
+                    body: JSON.stringify({
+                        provider: config.activeProvider,
+                        // Send masked key — server will decode from DB
+                        apiKey: (() => {
+                            if (config.activeProvider === "gemini")
+                                return config.geminiApiKey;
+                            if (config.activeProvider === "openai")
+                                return config.openaiApiKey;
+                            if (config.activeProvider === "anthropic")
+                                return config.anthropicApiKey;
+                            return "";
+                        })(),
+                        baseURL: (() => {
+                            if (config.activeProvider === "openai")
+                                return config.openaiBaseUrl;
+                            if (config.activeProvider === "anthropic")
+                                return config.anthropicBaseUrl;
+                            return "";
+                        })(),
+                        model: isCustomModel
+                            ? customModelInput
+                            : config.activeModel,
+                    }),
+                },
+            );
 
             setTestStatus({ success: true, message: res.message });
             toast.success(res.message);
@@ -317,8 +366,9 @@ export function AiProviderSettings() {
                             No API key configured
                         </h4>
                         <p className="text-xs font-mono text-muted-foreground mt-1 leading-relaxed">
-                            Add an API key for one provider below. Marko uses the active provider's key
-                            to generate courses, lessons, and quizzes.
+                            Add an API key for one provider below. Marko uses
+                            the active provider's key to generate courses,
+                            lessons, and quizzes.
                         </p>
                     </div>
                 </div>
@@ -328,7 +378,10 @@ export function AiProviderSettings() {
             <Card className="bauhaus-square bauhaus-border bauhaus-shadow bg-card">
                 <CardHeader className="border-b bauhaus-border bg-bauhaus-blue pb-4 text-white">
                     <CardTitle className="text-base font-bold uppercase tracking-wider flex items-center gap-2">
-                        <Icon icon="ph:cpu-bold" className="size-5 text-white" />
+                        <Icon
+                            icon="ph:cpu-bold"
+                            className="size-5 text-white"
+                        />
                         <span>Active Provider & Model</span>
                     </CardTitle>
                 </CardHeader>
@@ -340,39 +393,56 @@ export function AiProviderSettings() {
                         </Label>
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                             {providers.map((p) => {
-                                const isSelected = config.activeProvider === p.id;
+                                const isSelected =
+                                    config.activeProvider === p.id;
                                 return (
                                     <button
                                         key={p.id}
                                         type="button"
                                         aria-pressed={isSelected}
                                         onClick={() => {
-                                            setConfig(prev => ({ ...prev, activeProvider: p.id }));
+                                            setConfig((prev) => ({
+                                                ...prev,
+                                                activeProvider: p.id,
+                                            }));
                                             loadModels(p.id);
                                             handleSwitchProvider(p.id);
                                         }}
                                         disabled={isSavingProvider}
                                         className={cn(
                                             "flex flex-col p-4 text-left bauhaus-border transition-all duration-150 bauhaus-square relative",
-                                            isSelected ? p.activeColor : "bg-background hover:bg-muted text-foreground"
+                                            isSelected
+                                                ? p.activeColor
+                                                : "bg-background hover:bg-muted text-foreground",
                                         )}
                                     >
                                         <div className="flex items-center justify-between mb-3">
                                             <div className="size-7 flex items-center justify-center">
                                                 <Icon
                                                     icon={p.icon}
-                                                    className={cn("size-5", p.id === "openai" && isSelected && "brightness-200")}
+                                                    className={cn(
+                                                        "size-5",
+                                                        p.id === "openai" &&
+                                                            isSelected &&
+                                                            "brightness-200",
+                                                    )}
                                                 />
                                             </div>
                                             <div className="flex items-center gap-1">
                                                 {p.hasKey && (
                                                     <ShieldCheck className="size-3.5 opacity-80" />
                                                 )}
-                                                {isSelected && <CheckCircle2 className="size-4 shrink-0" />}
+                                                {isSelected && (
+                                                    <CheckCircle2 className="size-4 shrink-0" />
+                                                )}
                                             </div>
                                         </div>
-                                        <span className="text-xs font-black uppercase tracking-wider leading-tight">{p.name}</span>
-                                        <span className="text-[10px] font-mono opacity-70 mt-1.5 leading-snug">{p.desc}</span>
+                                        <span className="text-xs font-black uppercase tracking-wider leading-tight">
+                                            {p.name}
+                                        </span>
+                                        <span className="text-[10px] font-mono opacity-70 mt-1.5 leading-snug">
+                                            {p.desc}
+                                        </span>
                                     </button>
                                 );
                             })}
@@ -385,17 +455,31 @@ export function AiProviderSettings() {
                     <div className="flex flex-col gap-4">
                         <div className="flex items-center justify-between flex-wrap gap-2">
                             <Label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-                                Model{config.activeProvider ? ` — ${config.activeProvider.toUpperCase()}` : ""}
+                                Model
+                                {config.activeProvider
+                                    ? ` — ${config.activeProvider.toUpperCase()}`
+                                    : ""}
                             </Label>
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => loadModels(config.activeProvider || "gemini")}
-                                disabled={isFetchingModels || !config.activeProvider}
+                                onClick={() =>
+                                    loadModels(
+                                        config.activeProvider || "gemini",
+                                    )
+                                }
+                                disabled={
+                                    isFetchingModels || !config.activeProvider
+                                }
                                 className="h-7 text-[11px] font-black uppercase tracking-wider px-3"
                                 aria-label="Refresh available models from provider"
                             >
-                                <RefreshCw className={cn("size-3 mr-1.5", isFetchingModels && "animate-spin")} />
+                                <RefreshCw
+                                    className={cn(
+                                        "size-3 mr-1.5",
+                                        isFetchingModels && "animate-spin",
+                                    )}
+                                />
                                 Refresh models
                             </Button>
                         </div>
@@ -407,28 +491,49 @@ export function AiProviderSettings() {
                                         <select
                                             value={config.activeModel || ""}
                                             onChange={(e) => {
-                                                if (e.target.value === "__custom__") {
+                                                if (
+                                                    e.target.value ===
+                                                    "__custom__"
+                                                ) {
                                                     setIsCustomModel(true);
                                                 } else {
-                                                    setConfig(prev => ({ ...prev, activeModel: e.target.value }));
-                                                    handleSaveModel(e.target.value);
+                                                    setConfig((prev) => ({
+                                                        ...prev,
+                                                        activeModel:
+                                                            e.target.value,
+                                                    }));
+                                                    handleSaveModel(
+                                                        e.target.value,
+                                                    );
                                                 }
                                             }}
                                             disabled={isFetchingModels}
                                             className="flex h-10 w-full bauhaus-square bauhaus-border bg-background px-3 py-2 pr-8 text-sm font-bold uppercase tracking-wide text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring appearance-none disabled:opacity-50"
                                         >
                                             {isFetchingModels ? (
-                                                <option value="">Loading models…</option>
+                                                <option value="">
+                                                    Loading models…
+                                                </option>
                                             ) : availableModels.length === 0 ? (
-                                                <option value="">— No models found. Add your API key below. —</option>
+                                                <option value="">
+                                                    — No models found. Add your
+                                                    API key below. —
+                                                </option>
                                             ) : (
-                                                availableModels.map((modelName) => (
-                                                    <option key={modelName} value={modelName}>
-                                                        {modelName}
-                                                    </option>
-                                                ))
+                                                availableModels.map(
+                                                    (modelName) => (
+                                                        <option
+                                                            key={modelName}
+                                                            value={modelName}
+                                                        >
+                                                            {modelName}
+                                                        </option>
+                                                    ),
+                                                )
                                             )}
-                                            <option value="__custom__">+ Type a custom model ID…</option>
+                                            <option value="__custom__">
+                                                + Type a custom model ID…
+                                            </option>
                                         </select>
                                         <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                                     </div>
@@ -436,7 +541,11 @@ export function AiProviderSettings() {
                                     <div className="flex gap-2">
                                         <Input
                                             value={customModelInput}
-                                            onChange={(e) => setCustomModelInput(e.target.value)}
+                                            onChange={(e) =>
+                                                setCustomModelInput(
+                                                    e.target.value,
+                                                )
+                                            }
                                             placeholder="e.g. deepseek-ai/DeepSeek-V3"
                                             className="bauhaus-square bauhaus-border bg-background h-10 flex-1"
                                             autoFocus
@@ -444,7 +553,9 @@ export function AiProviderSettings() {
                                         <Button
                                             onClick={() => {
                                                 setIsCustomModel(false);
-                                                handleSaveModel(customModelInput);
+                                                handleSaveModel(
+                                                    customModelInput,
+                                                );
                                             }}
                                             variant="outline"
                                             className="bauhaus-square bauhaus-border h-10 text-xs font-black uppercase tracking-wider shrink-0"
@@ -459,11 +570,16 @@ export function AiProviderSettings() {
                             <div className="flex items-center gap-2.5 shrink-0">
                                 <Button
                                     onClick={handleTestConnection}
-                                    disabled={isTesting || !config.activeProvider}
+                                    disabled={
+                                        isTesting || !config.activeProvider
+                                    }
                                     className="bauhaus-square bauhaus-border bg-foreground text-background hover:bg-bauhaus-yellow hover:text-black h-10 px-5 font-black uppercase tracking-wider text-xs whitespace-nowrap"
                                 >
                                     {isTesting ? (
-                                        <><Loader2 className="size-3.5 animate-spin mr-1.5" />Testing…</>
+                                        <>
+                                            <Loader2 className="size-3.5 animate-spin mr-1.5" />
+                                            Testing…
+                                        </>
                                     ) : (
                                         "Test connection"
                                     )}
@@ -473,14 +589,20 @@ export function AiProviderSettings() {
                                     <div
                                         className={cn(
                                             "flex items-center gap-1 text-xs font-black uppercase tracking-wider whitespace-nowrap",
-                                            testStatus.success ? "text-success" : "text-destructive"
+                                            testStatus.success
+                                                ? "text-success"
+                                                : "text-destructive",
                                         )}
                                         title={testStatus.message}
                                     >
+                                        {testStatus.success ? (
+                                            <CheckCircle2 className="size-4 shrink-0" />
+                                        ) : (
+                                            <XCircle className="size-4 shrink-0" />
+                                        )}
                                         {testStatus.success
-                                            ? <CheckCircle2 className="size-4 shrink-0" />
-                                            : <XCircle className="size-4 shrink-0" />}
-                                        {testStatus.success ? "Connected" : "Failed"}
+                                            ? "Connected"
+                                            : "Failed"}
                                     </div>
                                 )}
                             </div>
@@ -490,202 +612,403 @@ export function AiProviderSettings() {
             </Card>
 
             {/* ── GOOGLE GEMINI ─────────────────────────────────── */}
-            <ProviderKeyCard
-                title="Google Gemini"
-                icon="logos:google-gemini"
-                headerColor="bg-bauhaus-yellow text-black"
-                hasKey={Boolean(config.hasGeminiKey)}
-                maskedKey={config.geminiApiKey}
-                form={geminiForm}
-                setForm={setGeminiForm}
-                keyPlaceholder="AIzaSy…"
-                helpText={
-                    <>
-                        Get a free key at{" "}
-                        <a href="https://aistudio.google.com" target="_blank" rel="noreferrer" className="underline underline-offset-2">
-                            aistudio.google.com
-                        </a>
-                        .
-                    </>
-                }
-                onSave={() =>
-                    handleSaveKey("gemini", geminiForm.apiKey, undefined, setGeminiForm)
-                }
-                onDelete={() => handleDeleteKey("gemini", setGeminiForm)}
-                saveLabel="Save & use Gemini"
-            />
+            {config.activeProvider === "gemini" && (
+                <div className="space-y-4">
+                    {!config.hasGeminiKey && (
+                        <div className="bg-destructive/10 border-2 border-destructive p-4 bauhaus-square flex items-center gap-3 text-destructive text-xs font-bold uppercase tracking-wider">
+                            <AlertTriangle className="size-4" />
+                            No API key stored for Google Gemini yet. Please add a key below.
+                        </div>
+                    )}
+                    {config.hasGeminiKey && (
+                        <div className="bg-success/10 border-2 border-success p-4 bauhaus-square flex items-center gap-3 text-success text-xs font-bold uppercase tracking-wider">
+                            <CheckCircle2 className="size-4" />
+                            You have an active Google Gemini API key configured.
+                        </div>
+                    )}
+                    <ProviderKeyCard
+                        title="Google Gemini"
+                        icon="logos:google-gemini"
+                        headerColor="bg-bauhaus-yellow text-black"
+                        hasKey={Boolean(config.hasGeminiKey)}
+                        maskedKey={config.geminiApiKey}
+                        form={geminiForm}
+                        setForm={setGeminiForm}
+                        keyPlaceholder="AIzaSy…"
+                        helpText={
+                            <>
+                                Get a free key at{" "}
+                                <a
+                                    href="https://aistudio.google.com"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="underline underline-offset-2"
+                                >
+                                    aistudio.google.com
+                                </a>
+                                .
+                            </>
+                        }
+                        onSave={() =>
+                            handleSaveKey(
+                                "gemini",
+                                geminiForm.apiKey,
+                                undefined,
+                                setGeminiForm,
+                            )
+                        }
+                        onDelete={() => handleDeleteKey("gemini", setGeminiForm)}
+                        saveLabel="Save & use Gemini"
+                    />
+                </div>
+            )}
 
             {/* ── OPENAI & COMPATIBLE ───────────────────────────── */}
-            <Card className="bauhaus-square bauhaus-border bauhaus-shadow bg-card">
-                <CardHeader className="border-b bauhaus-border bg-bauhaus-blue pb-4 text-white">
-                    <CardTitle className="text-base font-bold uppercase tracking-wider flex items-center gap-2">
-                        <Icon icon="logos:openai-icon" className="size-5 brightness-200" />
-                        <span>OpenAI & Compatible</span>
-                        {config.hasOpenAiKey && (
-                            <span className="ml-auto flex items-center gap-1 text-[10px] font-mono uppercase tracking-widest opacity-80">
-                                <ShieldCheck className="size-3.5" /> Key encrypted
-                            </span>
-                        )}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="p-5 sm:p-7 flex flex-col gap-6">
-                    {/* Quick presets — always visible so user can set base URL */}
-                    <div className="space-y-2">
-                        <Label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-                            Base URL preset
-                        </Label>
-                        <div className="flex flex-wrap gap-2">
-                            {[
-                                { label: "OpenAI Official", url: "https://api.openai.com/v1", icon: "logos:openai-icon" },
-                                { label: "Groq Cloud", url: "https://api.groq.com/openai/v1", icon: "simple-icons:groq" },
-                                { label: "OpenRouter", url: "https://openrouter.ai/api/v1", icon: "simple-icons:openrouter" },
-                                { label: "Ollama Local", url: "http://localhost:11434/v1", icon: "simple-icons:ollama" },
-                            ].map((preset) => (
-                                <Button
-                                    key={preset.label}
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setOpenaiForm(p => ({ ...p, baseUrl: preset.url }))}
-                                    className="bauhaus-square bauhaus-border h-9 text-xs font-black uppercase tracking-wider flex items-center gap-1.5"
-                                >
-                                    <Icon icon={preset.icon} className="size-3.5" />
-                                    {preset.label}
-                                </Button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="openai-baseurl" className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                            <Globe className="size-3.5" /> Base URL
-                        </Label>
-                        <Input
-                            id="openai-baseurl"
-                            value={openaiForm.baseUrl}
-                            onChange={(e) => setOpenaiForm(p => ({ ...p, baseUrl: e.target.value }))}
-                            placeholder="https://api.openai.com/v1"
-                            disabled={Boolean(config.hasOpenAiKey)}
-                            className="bauhaus-square bauhaus-border bg-background h-10 disabled:opacity-50"
-                        />
-                    </div>
-
-                    {config.hasOpenAiKey ? (
-                        <KeyLockedState
-                            maskedKey={config.openaiApiKey}
-                            isDeleting={openaiForm.isDeleting}
-                            onDelete={() => handleDeleteKey("openai", setOpenaiForm)}
-                        />
-                    ) : (
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="openai-key" className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                    <Key className="size-3.5" /> API Key
-                                </Label>
-                                <div className="relative">
-                                    <Input
-                                        id="openai-key"
-                                        type={openaiForm.showKey ? "text" : "password"}
-                                        value={openaiForm.apiKey}
-                                        onChange={(e) => setOpenaiForm(p => ({ ...p, apiKey: e.target.value }))}
-                                        placeholder="sk-…"
-                                        className="bauhaus-square bauhaus-border bg-background h-10 pr-10"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setOpenaiForm(p => ({ ...p, showKey: !p.showKey }))}
-                                        aria-label={openaiForm.showKey ? "Hide API key" : "Show API key"}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                                    >
-                                        {openaiForm.showKey ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                                    </button>
-                                </div>
-                            </div>
-                            <Button
-                                onClick={() => handleSaveKey("openai", openaiForm.apiKey, openaiForm.baseUrl, setOpenaiForm)}
-                                disabled={openaiForm.isSaving}
-                                className="bauhaus-square bauhaus-border bg-foreground text-background hover:bg-bauhaus-blue hover:text-white self-start px-8 font-black uppercase tracking-wider text-sm h-10"
-                            >
-                                {openaiForm.isSaving ? (
-                                    <><Loader2 className="size-3.5 animate-spin mr-1.5" />Saving…</>
-                                ) : "Save & use OpenAI"}
-                            </Button>
+            {config.activeProvider === "openai" && (
+                <div className="space-y-4">
+                    {!config.hasOpenAiKey && (
+                        <div className="bg-destructive/10 border-2 border-destructive p-4 bauhaus-square flex items-center gap-3 text-destructive text-xs font-bold uppercase tracking-wider">
+                            <AlertTriangle className="size-4" />
+                            No API key stored for OpenAI & Compatible yet. Please add a key below.
                         </div>
                     )}
-                </CardContent>
-            </Card>
+                    {config.hasOpenAiKey && (
+                        <div className="bg-success/10 border-2 border-success p-4 bauhaus-square flex items-center gap-3 text-success text-xs font-bold uppercase tracking-wider">
+                            <CheckCircle2 className="size-4" />
+                            You have an active OpenAI Compatible API key configured.
+                        </div>
+                    )}
+                    <Card className="bauhaus-square bauhaus-border bauhaus-shadow bg-card">
+                        <CardHeader className="border-b bauhaus-border bg-bauhaus-blue pb-4 text-white">
+                            <CardTitle className="text-base font-bold uppercase tracking-wider flex items-center gap-2">
+                                <Icon
+                                    icon="logos:openai-icon"
+                                    className="size-5 brightness-200"
+                                />
+                                <span>OpenAI & Compatible</span>
+                                {config.hasOpenAiKey && (
+                                    <span className="ml-auto flex items-center gap-1 text-[10px] font-mono uppercase tracking-widest opacity-80">
+                                        <ShieldCheck className="size-3.5" /> Key
+                                        encrypted
+                                    </span>
+                                )}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-5 sm:p-7 flex flex-col gap-6">
+                            {/* Quick presets — always visible so user can set base URL */}
+                            <div className="space-y-2">
+                                <Label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                                    Base URL preset
+                                </Label>
+                                <div className="flex flex-wrap gap-2">
+                                    {[
+                                        {
+                                            label: "OpenAI Official",
+                                            url: "https://api.openai.com/v1",
+                                            icon: "logos:openai-icon",
+                                        },
+                                        {
+                                            label: "Groq Cloud",
+                                            url: "https://api.groq.com/openai/v1",
+                                            icon: "simple-icons:groq",
+                                        },
+                                        {
+                                            label: "OpenRouter",
+                                            url: "https://openrouter.ai/api/v1",
+                                            icon: "simple-icons:openrouter",
+                                        },
+                                        {
+                                            label: "Ollama Local",
+                                            url: "http://localhost:11434/v1",
+                                            icon: "simple-icons:ollama",
+                                        },
+                                    ].map((preset) => (
+                                        <Button
+                                            key={preset.label}
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() =>
+                                                setOpenaiForm((p) => ({
+                                                    ...p,
+                                                    baseUrl: preset.url,
+                                                }))
+                                            }
+                                            className="bauhaus-square bauhaus-border h-9 text-xs font-black uppercase tracking-wider flex items-center gap-1.5"
+                                        >
+                                            <Icon
+                                                icon={preset.icon}
+                                                className="size-3.5"
+                                            />
+                                            {preset.label}
+                                        </Button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label
+                                    htmlFor="openai-baseurl"
+                                    className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2"
+                                >
+                                    <Globe className="size-3.5" /> Base URL
+                                </Label>
+                                <Input
+                                    id="openai-baseurl"
+                                    value={openaiForm.baseUrl}
+                                    onChange={(e) =>
+                                        setOpenaiForm((p) => ({
+                                            ...p,
+                                            baseUrl: e.target.value,
+                                        }))
+                                    }
+                                    placeholder="https://api.openai.com/v1"
+                                    disabled={Boolean(config.hasOpenAiKey)}
+                                    className="bauhaus-square bauhaus-border bg-background h-10 disabled:opacity-50"
+                                />
+                            </div>
+
+                            {config.hasOpenAiKey ? (
+                                <KeyLockedState
+                                    maskedKey={config.openaiApiKey}
+                                    isDeleting={openaiForm.isDeleting}
+                                    onDelete={() =>
+                                        handleDeleteKey("openai", setOpenaiForm)
+                                    }
+                                />
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label
+                                            htmlFor="openai-key"
+                                            className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2"
+                                        >
+                                            <Key className="size-3.5" /> API Key
+                                        </Label>
+                                        <div className="relative">
+                                            <Input
+                                                id="openai-key"
+                                                type={
+                                                    openaiForm.showKey
+                                                        ? "text"
+                                                        : "password"
+                                                }
+                                                value={openaiForm.apiKey}
+                                                onChange={(e) =>
+                                                    setOpenaiForm((p) => ({
+                                                        ...p,
+                                                        apiKey: e.target.value,
+                                                    }))
+                                                }
+                                                placeholder="sk-…"
+                                                className="bauhaus-square bauhaus-border bg-background h-10 pr-10"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setOpenaiForm((p) => ({
+                                                        ...p,
+                                                        showKey: !p.showKey,
+                                                    }))
+                                                }
+                                                aria-label={
+                                                    openaiForm.showKey
+                                                        ? "Hide API key"
+                                                        : "Show API key"
+                                                }
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                            >
+                                                {openaiForm.showKey ? (
+                                                    <EyeOff className="size-4" />
+                                                ) : (
+                                                    <Eye className="size-4" />
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <Button
+                                        onClick={() =>
+                                            handleSaveKey(
+                                                "openai",
+                                                openaiForm.apiKey,
+                                                openaiForm.baseUrl,
+                                                setOpenaiForm,
+                                            )
+                                        }
+                                        disabled={openaiForm.isSaving}
+                                        className="bauhaus-square bauhaus-border bg-foreground text-background hover:bg-bauhaus-blue hover:text-white self-start px-8 font-black uppercase tracking-wider text-sm h-10"
+                                    >
+                                        {openaiForm.isSaving ? (
+                                            <>
+                                                <Loader2 className="size-3.5 animate-spin mr-1.5" />
+                                                Saving…
+                                            </>
+                                        ) : (
+                                            "Save & use OpenAI"
+                                        )}
+                                    </Button>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
 
             {/* ── ANTHROPIC ─────────────────────────────────────── */}
-            <Card className="bauhaus-square bauhaus-border bauhaus-shadow bg-card">
-                <CardHeader className="border-b bauhaus-border bg-bauhaus-red pb-4 text-white">
-                    <CardTitle className="text-base font-bold uppercase tracking-wider flex items-center gap-2">
-                        <Icon icon="logos:anthropic-icon" className="size-5 brightness-200" />
-                        <span>Anthropic</span>
-                        {config.hasAnthropicKey && (
-                            <span className="ml-auto flex items-center gap-1 text-[10px] font-mono uppercase tracking-widest opacity-80">
-                                <ShieldCheck className="size-3.5" /> Key encrypted
-                            </span>
-                        )}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="p-5 sm:p-7 flex flex-col gap-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="anthropic-baseurl" className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                            <Globe className="size-3.5" /> Base URL
-                        </Label>
-                        <Input
-                            id="anthropic-baseurl"
-                            value={anthropicForm.baseUrl}
-                            onChange={(e) => setAnthropicForm(p => ({ ...p, baseUrl: e.target.value }))}
-                            placeholder="https://api.anthropic.com"
-                            disabled={Boolean(config.hasAnthropicKey)}
-                            className="bauhaus-square bauhaus-border bg-background h-10 disabled:opacity-50"
-                        />
-                    </div>
-
-                    {config.hasAnthropicKey ? (
-                        <KeyLockedState
-                            maskedKey={config.anthropicApiKey}
-                            isDeleting={anthropicForm.isDeleting}
-                            onDelete={() => handleDeleteKey("anthropic", setAnthropicForm)}
-                        />
-                    ) : (
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="anthropic-key" className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                    <Key className="size-3.5" /> API Key
-                                </Label>
-                                <div className="relative">
-                                    <Input
-                                        id="anthropic-key"
-                                        type={anthropicForm.showKey ? "text" : "password"}
-                                        value={anthropicForm.apiKey}
-                                        onChange={(e) => setAnthropicForm(p => ({ ...p, apiKey: e.target.value }))}
-                                        placeholder="sk-ant-…"
-                                        className="bauhaus-square bauhaus-border bg-background h-10 pr-10"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setAnthropicForm(p => ({ ...p, showKey: !p.showKey }))}
-                                        aria-label={anthropicForm.showKey ? "Hide API key" : "Show API key"}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                                    >
-                                        {anthropicForm.showKey ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                                    </button>
-                                </div>
-                            </div>
-                            <Button
-                                onClick={() => handleSaveKey("anthropic", anthropicForm.apiKey, anthropicForm.baseUrl, setAnthropicForm)}
-                                disabled={anthropicForm.isSaving}
-                                className="bauhaus-square bauhaus-border bg-foreground text-background hover:bg-bauhaus-red hover:text-white self-start px-8 font-black uppercase tracking-wider text-sm h-10"
-                            >
-                                {anthropicForm.isSaving ? (
-                                    <><Loader2 className="size-3.5 animate-spin mr-1.5" />Saving…</>
-                                ) : "Save & use Anthropic"}
-                            </Button>
+            {config.activeProvider === "anthropic" && (
+                <div className="space-y-4">
+                    {!config.hasAnthropicKey && (
+                        <div className="bg-destructive/10 border-2 border-destructive p-4 bauhaus-square flex items-center gap-3 text-destructive text-xs font-bold uppercase tracking-wider">
+                            <AlertTriangle className="size-4" />
+                            No API key stored for Anthropic yet. Please add a key below.
                         </div>
                     )}
-                </CardContent>
-            </Card>
+                    {config.hasAnthropicKey && (
+                        <div className="bg-success/10 border-2 border-success p-4 bauhaus-square flex items-center gap-3 text-success text-xs font-bold uppercase tracking-wider">
+                            <CheckCircle2 className="size-4" />
+                            You have an active Anthropic API key configured.
+                        </div>
+                    )}
+                    <Card className="bauhaus-square bauhaus-border bauhaus-shadow bg-card">
+                        <CardHeader className="border-b bauhaus-border bg-bauhaus-red pb-4 text-white">
+                            <CardTitle className="text-base font-bold uppercase tracking-wider flex items-center gap-2">
+                                <Icon
+                                    icon="logos:anthropic-icon"
+                                    className="size-5 brightness-200"
+                                />
+                                <span>Anthropic</span>
+                                {config.hasAnthropicKey && (
+                                    <span className="ml-auto flex items-center gap-1 text-[10px] font-mono uppercase tracking-widest opacity-80">
+                                        <ShieldCheck className="size-3.5" /> Key
+                                        encrypted
+                                    </span>
+                                )}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-5 sm:p-7 flex flex-col gap-6">
+                            <div className="space-y-2">
+                                <Label
+                                    htmlFor="anthropic-baseurl"
+                                    className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2"
+                                >
+                                    <Globe className="size-3.5" /> Base URL
+                                </Label>
+                                <Input
+                                    id="anthropic-baseurl"
+                                    value={anthropicForm.baseUrl}
+                                    onChange={(e) =>
+                                        setAnthropicForm((p) => ({
+                                            ...p,
+                                            baseUrl: e.target.value,
+                                        }))
+                                    }
+                                    placeholder="https://api.anthropic.com"
+                                    disabled={Boolean(config.hasAnthropicKey)}
+                                    className="bauhaus-square bauhaus-border bg-background h-10 disabled:opacity-50"
+                                />
+                            </div>
+
+                            {config.hasAnthropicKey ? (
+                                <KeyLockedState
+                                    maskedKey={config.anthropicApiKey}
+                                    isDeleting={anthropicForm.isDeleting}
+                                    onDelete={() =>
+                                        handleDeleteKey("anthropic", setAnthropicForm)
+                                    }
+                                />
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label
+                                            htmlFor="anthropic-key"
+                                            className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2"
+                                        >
+                                            <Key className="size-3.5" /> API Key
+                                        </Label>
+                                        <div className="relative">
+                                            <Input
+                                                id="anthropic-key"
+                                                type={
+                                                    anthropicForm.showKey
+                                                        ? "text"
+                                                        : "password"
+                                                }
+                                                value={anthropicForm.apiKey}
+                                                onChange={(e) =>
+                                                    setAnthropicForm((p) => ({
+                                                        ...p,
+                                                        apiKey: e.target.value,
+                                                    }))
+                                                }
+                                                placeholder="sk-ant-…"
+                                                className="bauhaus-square bauhaus-border bg-background h-10 pr-10"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setAnthropicForm((p) => ({
+                                                        ...p,
+                                                        showKey: !p.showKey,
+                                                    }))
+                                                }
+                                                aria-label={
+                                                    anthropicForm.showKey
+                                                        ? "Hide API key"
+                                                        : "Show API key"
+                                                }
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                            >
+                                                {anthropicForm.showKey ? (
+                                                    <EyeOff className="size-4" />
+                                                ) : (
+                                                    <Eye className="size-4" />
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <Button
+                                        onClick={() =>
+                                            handleSaveKey(
+                                                "anthropic",
+                                                anthropicForm.apiKey,
+                                                anthropicForm.baseUrl,
+                                                setAnthropicForm,
+                                            )
+                                        }
+                                        disabled={anthropicForm.isSaving}
+                                        className="bauhaus-square bauhaus-border bg-foreground text-background hover:bg-bauhaus-red hover:text-white self-start px-8 font-black uppercase tracking-wider text-sm h-10"
+                                    >
+                                        {anthropicForm.isSaving ? (
+                                            <>
+                                                <Loader2 className="size-3.5 animate-spin mr-1.5" />
+                                                Saving…
+                                            </>
+                                        ) : (
+                                            "Save & use Anthropic"
+                                        )}
+                                    </Button>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
+            {/* ── MOCK ENGINE ───────────────────────────────────── */}
+            {config.activeProvider === "mock" && (
+                <div className="bg-success/10 border-2 border-success p-5 bauhaus-square flex items-start gap-4">
+                    <div className="size-9 bg-success text-success-foreground flex items-center justify-center shrink-0 bauhaus-square mt-0.5">
+                        <CheckCircle2 className="size-4" />
+                    </div>
+                    <div>
+                        <h4 className="font-heading font-black uppercase text-foreground text-sm tracking-wide">
+                            Mock Engine Selected
+                        </h4>
+                        <p className="text-xs font-mono text-muted-foreground mt-1 leading-relaxed">
+                            You are running in offline/testing mode. No API key configuration is required to use the mock provider.
+                        </p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -708,13 +1031,24 @@ interface ProviderKeyCardProps {
 }
 
 function ProviderKeyCard({
-    title, icon, headerColor, hasKey, maskedKey,
-    form, setForm, keyPlaceholder, helpText,
-    onSave, onDelete, saveLabel,
+    title,
+    icon,
+    headerColor,
+    hasKey,
+    maskedKey,
+    form,
+    setForm,
+    keyPlaceholder,
+    helpText,
+    onSave,
+    onDelete,
+    saveLabel,
 }: ProviderKeyCardProps) {
     return (
         <Card className="bauhaus-square bauhaus-border bauhaus-shadow bg-card">
-            <CardHeader className={cn("border-b bauhaus-border pb-4", headerColor)}>
+            <CardHeader
+                className={cn("border-b bauhaus-border pb-4", headerColor)}
+            >
                 <CardTitle className="text-base font-bold uppercase tracking-wider flex items-center gap-2">
                     <Icon icon={icon} className="size-5" />
                     <span>{title}</span>
@@ -742,21 +1076,41 @@ function ProviderKeyCard({
                                 <Input
                                     type={form.showKey ? "text" : "password"}
                                     value={form.apiKey}
-                                    onChange={(e) => setForm(p => ({ ...p, apiKey: e.target.value }))}
+                                    onChange={(e) =>
+                                        setForm((p) => ({
+                                            ...p,
+                                            apiKey: e.target.value,
+                                        }))
+                                    }
                                     placeholder={keyPlaceholder}
                                     className="bauhaus-square bauhaus-border bg-background h-10 pr-10"
                                 />
                                 <button
                                     type="button"
-                                    onClick={() => setForm(p => ({ ...p, showKey: !p.showKey }))}
-                                    aria-label={form.showKey ? "Hide API key" : "Show API key"}
+                                    onClick={() =>
+                                        setForm((p) => ({
+                                            ...p,
+                                            showKey: !p.showKey,
+                                        }))
+                                    }
+                                    aria-label={
+                                        form.showKey
+                                            ? "Hide API key"
+                                            : "Show API key"
+                                    }
                                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                                 >
-                                    {form.showKey ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                                    {form.showKey ? (
+                                        <EyeOff className="size-4" />
+                                    ) : (
+                                        <Eye className="size-4" />
+                                    )}
                                 </button>
                             </div>
                             {helpText && (
-                                <p className="text-xs text-muted-foreground font-mono">{helpText}</p>
+                                <p className="text-xs text-muted-foreground font-mono">
+                                    {helpText}
+                                </p>
                             )}
                         </div>
                         <Button
@@ -765,8 +1119,13 @@ function ProviderKeyCard({
                             className="bauhaus-square bauhaus-border bg-foreground text-background hover:bg-bauhaus-yellow hover:text-black self-start px-8 font-black uppercase tracking-wider text-sm h-10"
                         >
                             {form.isSaving ? (
-                                <><Loader2 className="size-3.5 animate-spin mr-1.5" />Saving…</>
-                            ) : saveLabel}
+                                <>
+                                    <Loader2 className="size-3.5 animate-spin mr-1.5" />
+                                    Saving…
+                                </>
+                            ) : (
+                                saveLabel
+                            )}
                         </Button>
                     </div>
                 )}
@@ -781,7 +1140,11 @@ interface KeyLockedStateProps {
     onDelete: () => void;
 }
 
-function KeyLockedState({ maskedKey, isDeleting, onDelete }: KeyLockedStateProps) {
+function KeyLockedState({
+    maskedKey,
+    isDeleting,
+    onDelete,
+}: KeyLockedStateProps) {
     const [confirmDelete, setConfirmDelete] = React.useState(false);
 
     return (
@@ -812,18 +1175,28 @@ function KeyLockedState({ maskedKey, isDeleting, onDelete }: KeyLockedStateProps
             ) : (
                 <div className="flex flex-col gap-3 p-4 border-2 border-destructive bg-destructive/5 bauhaus-square">
                     <p className="text-xs font-mono text-destructive">
-                        This will permanently remove the stored key. You'll need to enter a new one to use this provider.
+                        This will permanently remove the stored key. You'll need
+                        to enter a new one to use this provider.
                     </p>
                     <div className="flex gap-2">
                         <Button
-                            onClick={() => { onDelete(); setConfirmDelete(false); }}
+                            onClick={() => {
+                                onDelete();
+                                setConfirmDelete(false);
+                            }}
                             disabled={isDeleting}
                             className="bauhaus-square bauhaus-border bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 px-5 font-black uppercase tracking-wider text-xs"
                         >
                             {isDeleting ? (
-                                <><Loader2 className="size-3.5 animate-spin mr-1.5" />Removing…</>
+                                <>
+                                    <Loader2 className="size-3.5 animate-spin mr-1.5" />
+                                    Removing…
+                                </>
                             ) : (
-                                <><Trash2 className="size-3.5 mr-1.5" />Delete key</>
+                                <>
+                                    <Trash2 className="size-3.5 mr-1.5" />
+                                    Delete key
+                                </>
                             )}
                         </Button>
                         <Button

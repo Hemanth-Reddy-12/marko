@@ -39,6 +39,8 @@ export function InterviewRoomPage() {
         }
     };
 
+    const isApiKeyError = error && (/api key/i.test(error) || /unauthorized|401|invalid/i.test(error));
+
     if (error) {
         return (
             <div className="flex items-center justify-center h-dvh bg-background p-4">
@@ -52,13 +54,27 @@ export function InterviewRoomPage() {
                         <BrainCircuit className="size-8 text-destructive" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-heading font-semibold text-foreground mb-2">Interview failed to start</h2>
+                        <h2 className="text-xl font-heading font-semibold text-foreground mb-2">
+                            {isApiKeyError ? "AI Provider API Key Error" : "Interview failed to start"}
+                        </h2>
                         <p className="text-sm text-muted-foreground">{error}</p>
                     </div>
-                    <Button onClick={() => navigate(-1)} variant="outline" className="rounded-none mt-4">
-                        <ArrowLeft className="size-4 mr-2" />
-                        Go back
-                    </Button>
+                    {isApiKeyError ? (
+                        <Button
+                            onClick={() => navigate("/settings")}
+                            className="bauhaus-square bg-bauhaus-red text-white hover:bg-bauhaus-red/90 font-bold uppercase tracking-widest text-xs h-11 px-6 border-2 border-foreground shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer"
+                        >
+                            Configure API Key in Settings
+                        </Button>
+                    ) : (
+                        <Button
+                            onClick={() => navigate(-1)}
+                            className="rounded-none mt-4 border-2 border-foreground hover:bg-muted font-bold uppercase tracking-widest text-xs h-11 px-6 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer"
+                        >
+                            <ArrowLeft className="size-4 mr-2" />
+                            Go back
+                        </Button>
+                    )}
                 </motion.div>
             </div>
         );

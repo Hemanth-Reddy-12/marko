@@ -12,9 +12,9 @@ setupChatGateway(httpServer);
 const PORT = Number.parseInt(env.PORT, 10);
 httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-    import("./lib/ai/index.js").then(({ getChatProvider }) => {
+    import("./lib/ai/index.js").then(async ({ getChatProvider }) => {
         try {
-            const provider = getChatProvider();
+            const provider = await getChatProvider();
             console.log(`[AI] Connected to Provider: ${provider.info.name.toUpperCase()} | Model: ${provider.info.model}`);
         } catch (error) {
             console.log(`[AI] ⚠️ Warning: Provider not configured correctly.`);

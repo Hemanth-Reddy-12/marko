@@ -19,6 +19,7 @@ interface PlannerFormProps {
 interface AiConfig {
     activeProvider: string;
     activeModel: string;
+    hasConfiguredKey?: boolean;
 }
 
 export function getProviderIcon(provider?: string): string {
@@ -101,7 +102,7 @@ export function PlannerForm({ isOpen, onClose, onCourseCreated }: PlannerFormPro
 
                 <form onSubmit={handleSubmit} className="flex flex-col p-6 sm:p-8 gap-8">
                     {/* Active Model Indicator */}
-                    {aiConfig && (
+                    {aiConfig && aiConfig.hasConfiguredKey && (
                         <div className="flex items-center justify-between text-xs font-mono text-foreground bg-muted/40 p-3.5 bauhaus-square bauhaus-border border-border">
                             <div className="flex items-center gap-2">
                                 <Icon icon={getProviderIcon(aiConfig.activeProvider)} className="size-4 shrink-0" />
@@ -112,6 +113,28 @@ export function PlannerForm({ isOpen, onClose, onCourseCreated }: PlannerFormPro
                             <span className="font-bold tracking-wide text-muted-foreground border-l border-border pl-3">
                                 {aiConfig.activeModel}
                             </span>
+                        </div>
+                    )}
+
+                    {aiConfig && !aiConfig.hasConfiguredKey && (
+                        <div className="text-xs font-bold uppercase tracking-widest text-bauhaus-red bg-bauhaus-red/5 p-5 flex flex-col gap-3 border-2 border-bauhaus-red rounded-none shadow-[3px_3px_0px_0px_var(--color-bauhaus-red)]">
+                            <div className="flex items-center gap-2">
+                                <AlertCircle className="size-4 shrink-0 text-bauhaus-red" />
+                                <span>No AI API Key Configured</span>
+                            </div>
+                            <p className="text-[10px] font-mono text-muted-foreground normal-case font-normal leading-relaxed">
+                                You must add an API key and configure your active model in settings before you can plan or generate a course.
+                            </p>
+                            <Button
+                                type="button"
+                                onClick={() => {
+                                    onClose();
+                                    window.location.href = "/settings";
+                                }}
+                                className="w-full bg-foreground text-background hover:bg-foreground/90 font-bold uppercase tracking-widest text-xs h-11 rounded-none border-2 border-foreground shadow-[3px_3px_0px_0px_var(--color-bauhaus-red)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer"
+                            >
+                                Configure API Key
+                            </Button>
                         </div>
                     )}
 
@@ -180,7 +203,7 @@ export function PlannerForm({ isOpen, onClose, onCourseCreated }: PlannerFormPro
                         </button>
                         <Button
                             type="submit"
-                            disabled={loading}
+                            disabled={loading || !aiConfig?.hasConfiguredKey}
                             className="rounded-none bg-bauhaus-red text-white hover:bg-bauhaus-red/90 font-bold uppercase tracking-widest text-xs px-8 h-12 bauhaus-border hover:bauhaus-shadow hover:-translate-y-1 hover:translate-x-1 transition-all flex items-center gap-2"
                         >
                             {loading ? (

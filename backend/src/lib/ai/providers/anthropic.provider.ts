@@ -35,7 +35,7 @@ export class AnthropicProvider implements ChatProvider {
         const apiKey = this.apiKey;
         if (!apiKey) return [];
         try {
-            const endpoint = `${this.baseURL.replace(/\/+$/, "")}/v1/models`;
+            const endpoint = `${(this.baseURL || "").replace(/\/+$/, "")}/v1/models`;
             const res = await fetch(endpoint, {
                 headers: {
                     "x-api-key": apiKey,
@@ -43,7 +43,7 @@ export class AnthropicProvider implements ChatProvider {
                 },
             });
             if (res.ok) {
-                const data = await res.json();
+                const data: any = await res.json();
                 if (data.data && Array.isArray(data.data)) {
                     return data.data.map((m: any) => m.id);
                 }
@@ -93,7 +93,7 @@ export class AnthropicProvider implements ChatProvider {
             body.temperature = req.temperature;
         }
 
-        const endpoint = `${this.baseURL.replace(/\/+$/, "")}/v1/messages`;
+        const endpoint = `${(this.baseURL || "https://api.anthropic.com").replace(/\/+$/, "")}/v1/messages`;
         const response = await fetch(endpoint, {
             method: "POST",
             headers: {
@@ -193,7 +193,7 @@ export class AnthropicProvider implements ChatProvider {
             body.temperature = req.temperature;
         }
 
-        const endpoint = `${this.baseURL.replace(/\/+$/, "")}/v1/messages`;
+        const endpoint = `${(this.baseURL || "https://api.anthropic.com").replace(/\/+$/, "")}/v1/messages`;
         const response = await fetch(endpoint, {
             method: "POST",
             headers: {
@@ -212,7 +212,7 @@ export class AnthropicProvider implements ChatProvider {
             throw new Error(`Anthropic API error (${response.status}): ${errorText}`);
         }
 
-        const data = await response.json();
+        const data: any = await response.json();
         const content = data.content?.[0]?.text;
 
         if (!content) {

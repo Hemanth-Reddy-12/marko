@@ -19,11 +19,23 @@ export async function setupChatGateway(httpServer: HTTPServer) {
     ioInstance = io;
 
     try {
-        const pubClient = createClient({ url: env.REDIS_URL });
-        const subClient = pubClient.duplicate();
+        const redisOptions = {
+            url: env.REDIS_URL,
+            socket: {
+                keepAlive: 5000,
+                reconnectStrategy: (retries: number) => {
+                    // Try to reconnect with backoff up to 3 seconds
+                    return Math.min(retries * 100, 3000);
+                },
+            },
+            pingInterval: 30000, // Send PING every 30s to keep Upstash connection alive
+        };
 
-        pubClient.on("error", (err) => console.error("Redis pubClient Error:", err));
-        subClient.on("error", (err) => console.error("Redis subClient Error:", err));
+        const pubClient = createClient(redisOptions as any);
+        const subClient = createClient(redisOptions as any);
+
+        pubClient.on("error", (err) => console.error("Redis pubClient Error:", err.message || err));
+        subClient.on("error", (err) => console.error("Redis subClient Error:", err.message || err));
 
         await Promise.all([pubClient.connect(), subClient.connect()]);
         io.adapter(createAdapter(pubClient, subClient));

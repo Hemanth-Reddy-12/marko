@@ -152,7 +152,7 @@
     --radius-lg: var(--radius);
     --radius-xl: var(--radius);
     --radius-2xl: var(--radius);
-    
+
     --color-bauhaus-red: #e3000f;
     --color-bauhaus-blue: #0033cc;
     --color-bauhaus-yellow: #ffcc00;
@@ -240,7 +240,7 @@
         border-right: 0.5rem solid transparent;
         border-bottom: 1rem solid;
     }
-    
+
     .bauhaus-triangle-down {
         width: 0;
         height: 0;
@@ -252,7 +252,7 @@
     .bauhaus-border {
         @apply border-2 border-foreground;
     }
-    
+
     .bauhaus-shadow {
         box-shadow: 4px 4px 0px 0px var(--foreground);
     }
@@ -270,3 +270,82 @@
         }
     }
 }
+
+/* Bauhaus Sonner Toast Custom overrides */
+[data-sonner-toast] {
+    --normal-bg: var(--card) !important;
+    --normal-border: var(--border) !important;
+    --normal-text: var(--foreground) !important;
+    font-family: var(--font-mono) !important;
+    border: 2px solid var(--border) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: 4px 4px 0px 0px var(--foreground) !important;
+    background: var(--card) !important;
+    color: var(--foreground) !important;
+}
+
+[data-sonner-toast][data-theme="dark"] {
+    --normal-bg: var(--card) !important;
+    --normal-border: var(--border) !important;
+    --normal-text: var(--foreground) !important;
+    border: 2px solid var(--border) !important;
+    box-shadow: 4px 4px 0px 0px var(--foreground) !important;
+}
+
+[data-sonner-toast] [data-title] {
+    font-family: var(--font-heading) !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    font-size: 0.8rem !important;
+}
+
+[data-sonner-toast] [data-description] {
+    font-family: var(--font-mono) !important;
+    font-size: 0.75rem !important;
+    color: var(--muted-foreground) !important;
+}
+
+/* Success toast: Bauhaus Green border & subtle highlight */
+[data-sonner-toast][data-type="success"] {
+    border-color: var(--success) !important;
+    box-shadow: 4px 4px 0px 0px var(--success) !important;
+}
+
+/* Error toast: Bauhaus Red border & shadow */
+[data-sonner-toast][data-type="error"] {
+    border-color: var(--destructive) !important;
+    box-shadow: 4px 4px 0px 0px var(--destructive) !important;
+}
+
+/* Warning toast: Bauhaus Yellow border & shadow */
+[data-sonner-toast][data-type="warning"] {
+    border-color: var(--secondary) !important;
+    box-shadow: 4px 4px 0px 0px var(--secondary) !important;
+}
+
+/* Info toast: Bauhaus Blue border & shadow */
+[data-sonner-toast][data-type="info"] {
+    border-color: var(--accent) !important;
+    box-shadow: 4px 4px 0px 0px var(--accent) !important;
+}
+
+[data-sonner-toast] [data-button] {
+    background: var(--foreground) !important;
+    color: var(--background) !important;
+    border-radius: var(--radius) !important;
+    border: 2px solid var(--foreground) !important;
+    font-family: var(--font-heading) !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    font-size: 0.7rem !important;
+}
+
+[data-sonner-toast] [data-close-button] {
+    border: 2px solid var(--border) !important;
+    background: var(--background) !important;
+    border-radius: var(--radius) !important;
+    color: var(--foreground) !important;
+}
+

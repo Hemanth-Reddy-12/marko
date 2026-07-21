@@ -53,7 +53,7 @@ export class GeminiProvider implements ChatProvider {
         try {
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${this.apiKey}`);
             if (!res.ok) return [];
-            const data = await res.json();
+            const data: any = await res.json();
             if (data.models && Array.isArray(data.models)) {
                 return data.models
                     .map((m: any) => (m.name ? m.name.replace(/^models\//, "") : ""))

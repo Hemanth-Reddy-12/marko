@@ -142,9 +142,9 @@ export function DashboardPage() {
 
             {/* No API Key Warning Banner */}
             {aiConfig && !aiConfig.hasConfiguredKey && (
-                <motion.div variants={itemVariants} className="bg-bauhaus-yellow/20 border-2 border-bauhaus-yellow p-6 bauhaus-square flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <motion.div variants={itemVariants} className="bg-bauhaus-yellow/10 border-2 border-bauhaus-yellow p-6 bauhaus-square flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_var(--foreground)] mb-4">
                     <div className="flex items-center gap-4">
-                        <div className="size-10 bg-bauhaus-yellow text-black flex items-center justify-center font-bold text-xl shrink-0 bauhaus-square">
+                        <div className="size-10 bg-bauhaus-yellow text-black flex items-center justify-center font-bold text-xl shrink-0 bauhaus-square border-2 border-black">
                             <Key className="size-5" />
                         </div>
                         <div>
@@ -158,7 +158,7 @@ export function DashboardPage() {
                     </div>
                     <Button
                         onClick={() => navigate("/settings")}
-                        className="bauhaus-square bg-foreground text-background hover:bg-foreground/90 font-bold uppercase tracking-widest text-xs h-11 px-6 shrink-0 shadow-[3px_3px_0px_0px_var(--bauhaus-yellow)]"
+                        className="bauhaus-square bg-foreground text-background hover:bg-foreground/90 font-bold uppercase tracking-widest text-xs h-11 px-6 shrink-0 shadow-[3px_3px_0px_0px_var(--color-bauhaus-yellow)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer border-2 border-foreground"
                     >
                         Add API Key in Settings
                     </Button>

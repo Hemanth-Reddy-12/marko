@@ -3,7 +3,7 @@ import 'dotenv/config';
 async function main() {
     const { getChatProvider } = await import("./src/lib/ai/index.js");
     const { env } = await import("./src/config/env.js");
-    const provider = getChatProvider();
+    const provider = await getChatProvider();
     console.log(`Testing generation with schema using provider: ${env.AI_PROVIDER}`);
     try {
         const result = await provider.generateStructured({
