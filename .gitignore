@@ -13,8 +13,7 @@ out/
 .nuxt/
 .vercel/
 
-# Generated Prisma Client & Caches
-/backend/src/generated/prisma/
+# Generated Caches
 .cache/
 .parcel-cache/
 .eslintcache

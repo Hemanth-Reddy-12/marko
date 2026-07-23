@@ -1,0 +1,284 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum CourseStatus {
+  GENERATING
+  ACTIVE
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum LessonStatus {
+  LOCKED
+  AVAILABLE
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum GenerationStatus {
+  NOT_GENERATED
+  GENERATING
+  GENERATED
+  FAILED
+}
+
+enum QuizStatus {
+  NOT_GENERATED
+  GENERATING
+  GENERATED
+  FAILED
+}
+
+enum AgentType {
+  PLANNER
+  CONTENT
+  QUIZ
+  INTERVIEW
+  TUTOR
+}
+
+enum ChatSessionType {
+  CAPSTONE
+  TUTOR
+}
+
+enum AgentRunStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+}
+
+model User {
+  id                   String            @id
+  name                 String
+  email                String            @unique
+  emailVerified        Boolean           @default(false)
+  image                String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  sessions             Session[]
+  accounts             Account[]
+  courses              Course[]
+  quizAttempts         QuizAttempt[]
+  interviews           Interview[]
+  chatSessions         ChatSession[]
+  agentRuns            AgentRun[]
+  notifications        Notification[]
+  notificationSettings Json?
+  aiProviderConfig     AiProviderConfig?
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model Course {
+  id            String        @id @default(cuid())
+  title         String
+  description   String?
+  durationDays  Int
+  estimateTime  Int           @default(0)
+  status        CourseStatus
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  lastVisitedAt DateTime?
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessons       Lesson[]
+  interview     Interview?
+  chatSessions  ChatSession[]
+
+  @@index([userId])
+}
+
+model Lesson {
+  id               String           @id @default(cuid())
+  title            String
+  order            Int
+  deadline         DateTime?
+  scheduledDate    DateTime?
+  estimateTime     Int              @default(0)
+  status           LessonStatus
+  generationStatus GenerationStatus
+  content          String?          @db.Text
+  weight           String           @default("medium")
+  courseId         String
+  course           Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  quizzes          Quiz[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([courseId])
+}
+
+model Quiz {
+  id        String        @id @default(cuid())
+  version   Int
+  status    QuizStatus
+  questions Json?
+  lessonId  String
+  lesson    Lesson        @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  attempts  QuizAttempt[]
+  createdAt DateTime      @default(now())
+
+  @@index([lessonId])
+}
+
+model QuizAttempt {
+  id        String   @id @default(cuid())
+  answers   Json
+  score     Float
+  passed    Boolean
+  quizId    String
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([quizId])
+  @@index([userId])
+}
+
+model Interview {
+  id         String   @id @default(cuid())
+  transcript Json?
+  score      Float?
+  passed     Boolean?
+  feedback   Json?
+  courseId   String   @unique
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+}
+
+model ChatSession {
+  id        String          @id @default(cuid())
+  title     String?
+  type      ChatSessionType @default(TUTOR)
+  courseId  String?
+  course    Course?         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+  createdAt DateTime        @default(now())
+
+  @@index([userId])
+  @@index([courseId])
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  role      String
+  content   String      @db.Text
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+
+  @@index([sessionId])
+}
+
+model AgentRun {
+  id               String         @id @default(cuid())
+  agent            AgentType
+  entityType       String
+  entityId         String
+  attempt          Int
+  status           AgentRunStatus
+  promptVersion    String
+  modelName        String?
+  input            Json?
+  output           Json?
+  error            String?
+  promptTokens     Int            @default(0)
+  completionTokens Int            @default(0)
+  totalTokens      Int            @default(0)
+  startedAt        DateTime
+  finishedAt       DateTime?
+  userId           String?
+  user             User?          @relation(fields: [userId], references: [id])
+  createdAt        DateTime       @default(now())
+
+  @@index([entityType, entityId])
+  @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model AiProviderConfig {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeProvider   String?
+  activeModel      String?
+  geminiApiKey     String?
+  openaiApiKey     String?
+  openaiBaseUrl    String?
+  anthropicApiKey  String?
+  anthropicBaseUrl String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
