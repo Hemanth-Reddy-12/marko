@@ -16,6 +16,8 @@ import { SettingsPage } from "@/pages/SettingsPage";
 import { LessonsPage } from "@/pages/LessonsPage";
 import { QuizzesPage } from "@/pages/QuizzesPage";
 import { InterviewsPage } from "@/pages/InterviewsPage";
+import { UsagePage } from "@/pages/UsagePage";
+import { CourseUsageAnalyticsPage } from "@/pages/CourseUsageAnalyticsPage";
 
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SocketProvider } from "@/components/SocketProvider";
@@ -43,6 +45,8 @@ const App = () => {
                         <Route path="/courses/:courseId/lessons/:lessonId/quiz" element={<QuizPage />} />
                         <Route path="/courses/:courseId/interview" element={<InterviewRoomPage />} />
                         <Route path="/settings" element={<SettingsPage />} />
+                        <Route path="/usage" element={<UsagePage />} />
+                        <Route path="/usage/courses/:courseId" element={<CourseUsageAnalyticsPage />} />
                     </Route>
 
                     <Route path="*" element={<NotFoundPage />} />

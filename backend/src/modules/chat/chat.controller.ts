@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import prisma from "../../config/db.js";
 import { initInterviewSchema } from "./chat.validate.js";
 import { generateInterviewPlan, evaluateInterview, type Milestone } from "../../agents/interview.agent.js";
-import { CourseStatus } from "../../generated/prisma/index.js";
+import { CourseStatus, ChatSessionType } from "../../generated/prisma/index.js";
 
 const runInterviewTurn = async (sessionId: string, userId: string) => {
     if (!userId) throw new Error("Unauthorized");
@@ -303,3 +303,94 @@ export const postSessionMessage = async (req: Request, res: Response, next: Next
         next(error);
     }
 };
+
+export const getTutorSession = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const userId = (req as any).user?.id;
+        if (!userId) {
+            res.status(401).json({ error: "Unauthorized" });
+            return;
+        }
+
+        const { courseId } = req.params;
+        if (typeof courseId !== "string") {
+            res.status(400).json({ error: "Invalid courseId" });
+            return;
+        }
+
+        const course = await prisma.course.findUnique({ where: { id: courseId } });
+        if (!course) {
+            res.status(404).json({ error: "Course not found" });
+            return;
+        }
+
+        let session = await prisma.chatSession.findFirst({
+            where: {
+                userId,
+                courseId,
+                type: ChatSessionType.TUTOR,
+            },
+            include: {
+                messages: {
+                    orderBy: { createdAt: "asc" },
+                },
+            },
+        });
+
+        if (!session) {
+            session = await prisma.chatSession.create({
+                data: {
+                    userId,
+                    courseId,
+                    type: ChatSessionType.TUTOR,
+                    title: `Tutor Chat: ${course.title}`,
+                },
+                include: {
+                    messages: {
+                        orderBy: { createdAt: "asc" },
+                    },
+                },
+            });
+        }
+
+        res.json({ session });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const clearTutorSession = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const userId = (req as any).user?.id;
+        if (!userId) {
+            res.status(401).json({ error: "Unauthorized" });
+            return;
+        }
+
+        const { courseId } = req.params;
+        if (typeof courseId !== "string") {
+            res.status(400).json({ error: "Invalid courseId" });
+            return;
+        }
+
+        const sessions = await prisma.chatSession.findMany({
+            where: {
+                userId,
+                courseId,
+            },
+            select: { id: true },
+        });
+
+        if (sessions.length > 0) {
+            const sessionIds = sessions.map((s) => s.id);
+            await prisma.chatMessage.deleteMany({
+                where: { sessionId: { in: sessionIds } },
+            });
+        }
+
+        res.json({ message: "Tutor chat history cleared" });
+    } catch (error) {
+        next(error);
+    }
+};
+

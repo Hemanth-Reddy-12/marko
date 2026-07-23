@@ -4,8 +4,10 @@ import { contentSystemPrompt, getContentUserPrompt } from "./prompts/content.pro
 
 export interface ContentInput {
     courseGoal: string;
+    courseDescription?: string | null;
     lessonTitle: string;
     lessonOrder: number;
+    allLessons?: { title: string; order: number }[];
     userId?: string;
     courseId: string;
     lessonId: string;
@@ -41,7 +43,16 @@ export async function runContentAgent(input: ContentInput): Promise<ContentOutpu
         {
             messages: [
                 { role: "system", content: contentSystemPrompt },
-                { role: "user", content: getContentUserPrompt(input.courseGoal, input.lessonTitle, input.lessonOrder) },
+                {
+                    role: "user",
+                    content: getContentUserPrompt(
+                        input.courseGoal,
+                        input.courseDescription,
+                        input.lessonTitle,
+                        input.lessonOrder,
+                        input.allLessons
+                    ),
+                },
             ],
         },
         CONTENT_SCHEMA,

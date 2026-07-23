@@ -44,45 +44,49 @@ export async function createCourse(
             courseId: course.id,
         }).then(async (planned) => {
             try {
-                // 3. Write lessons and update course in a quick transaction
-                await prisma.$transaction(async (tx) => {
-                    const numLessons = planned.lessons.length;
-                    const lessonsPerDay = Math.ceil(numLessons / Math.max(course.durationDays, 1));
-                    
-                    const lessonsData = planned.lessons.map((lesson, index) => {
-                        const dayOffset = Math.floor(index / lessonsPerDay);
-                        const scheduledDate = new Date();
-                        scheduledDate.setDate(scheduledDate.getDate() + dayOffset);
-                        // Zero out the time to make it a pure date
-                        scheduledDate.setHours(0, 0, 0, 0);
+                // 3. Write lessons and update course in a quick batch transaction
+                const numLessons = planned.lessons.length;
+                const lessonsPerDay = Math.ceil(numLessons / Math.max(course.durationDays, 1));
+                
+                const lessonsData = planned.lessons.map((lesson, index) => {
+                    const dayOffset = Math.floor(index / lessonsPerDay);
+                    const scheduledDate = new Date();
+                    scheduledDate.setDate(scheduledDate.getDate() + dayOffset);
+                    // Zero out the time to make it a pure date
+                    scheduledDate.setHours(0, 0, 0, 0);
 
-                        return {
-                            title: lesson.title,
-                            order: lesson.order,
-                            weight: lesson.weight || "medium",
-                            estimateTime: lesson.estimateTime || 0,
-                            scheduledDate: scheduledDate,
-                            status: lesson.order === 1 ? LessonStatus.AVAILABLE : LessonStatus.LOCKED,
-                            generationStatus: GenerationStatus.NOT_GENERATED,
-                            courseId: course.id,
-                        };
-                    });
-
-                    await tx.lesson.createMany({
-                        data: lessonsData,
-                    });
-
-                    // 4. Transition the Course to ACTIVE (ready) with the generated title/description
-                    await tx.course.update({
-                        where: { id: course.id },
-                        data: {
-                            title: planned.title,
-                            description: planned.description,
-                            estimateTime: planned.estimateTime || 0,
-                            status: CourseStatus.ACTIVE,
-                        }
-                    });
+                    return {
+                        title: lesson.title,
+                        order: lesson.order,
+                        weight: lesson.weight || "medium",
+                        estimateTime: lesson.estimateTime || 0,
+                        scheduledDate: scheduledDate,
+                        status: lesson.order === 1 ? LessonStatus.AVAILABLE : LessonStatus.LOCKED,
+                        generationStatus: GenerationStatus.NOT_GENERATED,
+                        courseId: course.id,
+                    };
                 });
+
+                await prisma.$transaction(
+                    [
+                        prisma.lesson.createMany({
+                            data: lessonsData,
+                        }),
+                        prisma.course.update({
+                            where: { id: course.id },
+                            data: {
+                                title: planned.title,
+                                description: planned.description,
+                                estimateTime: planned.estimateTime || 0,
+                                status: CourseStatus.ACTIVE,
+                            },
+                        }),
+                    ],
+                    {
+                        maxWait: 10000, // Wait up to 10s for connection from pool
+                        timeout: 15000, // Allow 15s for execution
+                    }
+                );
 
                 // Send notification to user that course is generated
                 await sendNotification(

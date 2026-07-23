@@ -40,6 +40,7 @@ export async function runAgent<T>(
             attempt,
             status: AgentRunStatus.RUNNING,
             promptVersion: context.promptVersion,
+            modelName: provider.info.model || provider.info.name,
             input: JSON.parse(JSON.stringify(req)),
             startedAt: new Date(),
         }
@@ -56,12 +57,22 @@ export async function runAgent<T>(
         const endTime = Date.now();
         console.log(`[AI] ✅ Success! Response received in ${((endTime - startTime) / 1000).toFixed(2)}s`);
 
+        const inputChars = req.messages.reduce((acc, m) => acc + (m.content?.length || 0), 0);
+        const outputChars = typeof result === "string" ? result.length : JSON.stringify(result || {}).length;
+        const promptTokens = Math.max(1, Math.ceil(inputChars / 4));
+        const completionTokens = Math.max(1, Math.ceil(outputChars / 4));
+        const totalTokens = promptTokens + completionTokens;
+
         // Update SUCCESS state
         await prisma.agentRun.update({
             where: { id: run.id },
             data: {
                 status: AgentRunStatus.SUCCESS,
                 output: JSON.parse(JSON.stringify(result)),
+                modelName: provider.info.model || provider.info.name,
+                promptTokens,
+                completionTokens,
+                totalTokens,
                 finishedAt: new Date(),
             }
         });

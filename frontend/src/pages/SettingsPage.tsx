@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { motion } from "framer-motion";
 import { useSession, signOut } from "@/lib/auth-client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/ThemeProvider";
 import { AiProviderSettings } from "@/features/settings/components/AiProviderSettings";
@@ -28,7 +28,15 @@ const itemVariants = {
 export function SettingsPage() {
     const { data: session } = useSession();
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = React.useState("profile");
+    const [searchParams] = useSearchParams();
+    const tabFromUrl = searchParams.get("tab");
+    const [activeTab, setActiveTab] = React.useState(tabFromUrl || "profile");
+
+    React.useEffect(() => {
+        if (tabFromUrl) {
+            setActiveTab(tabFromUrl);
+        }
+    }, [tabFromUrl]);
     const { theme, setTheme } = useTheme();
 
     const [settings, setSettings] = React.useState({

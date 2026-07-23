@@ -28,6 +28,12 @@ export async function getLesson(
         // Verify the user owns the course
         const course = await prisma.course.findUnique({
             where: { id: courseId },
+            include: {
+                lessons: {
+                    select: { title: true, order: true },
+                    orderBy: { order: "asc" },
+                },
+            },
         });
 
         if (!course) {
@@ -44,31 +50,37 @@ export async function getLesson(
         let currentLesson: any = null;
 
         // 1. Optimistic Lock Check & Update via Transaction
-        await prisma.$transaction(async (tx) => {
-            const lesson = await tx.lesson.findUnique({
-                where: { id: lessonId, courseId },
-            });
-
-            if (!lesson) {
-                return;
-            }
-
-            // Enforce sequential access
-            if (lesson.status === LessonStatus.LOCKED) {
-                throw new Error("Lesson is locked");
-            }
-
-            if (lesson.generationStatus === GenerationStatus.NOT_GENERATED) {
-                // Lock it to GENERATING
-                currentLesson = await tx.lesson.update({
-                    where: { id: lessonId },
-                    data: { generationStatus: GenerationStatus.GENERATING },
+        await prisma.$transaction(
+            async (tx) => {
+                const lesson = await tx.lesson.findUnique({
+                    where: { id: lessonId, courseId },
                 });
-                wasNewlyLocked = true;
-            } else {
-                currentLesson = lesson;
+
+                if (!lesson) {
+                    return;
+                }
+
+                // Enforce sequential access
+                if (lesson.status === LessonStatus.LOCKED) {
+                    throw new Error("Lesson is locked");
+                }
+
+                if (lesson.generationStatus === GenerationStatus.NOT_GENERATED) {
+                    // Lock it to GENERATING
+                    currentLesson = await tx.lesson.update({
+                        where: { id: lessonId },
+                        data: { generationStatus: GenerationStatus.GENERATING },
+                    });
+                    wasNewlyLocked = true;
+                } else {
+                    currentLesson = lesson;
+                }
+            },
+            {
+                maxWait: 10000,
+                timeout: 15000,
             }
-        });
+        );
 
         if (!currentLesson) {
             res.status(404).json({ error: "Lesson not found" });
@@ -87,8 +99,10 @@ export async function getLesson(
             // Do NOT await this here so we can return 202 immediately
             runContentAgent({
                 courseGoal: course.title,
+                courseDescription: course.description,
                 lessonTitle: (currentLesson as any).title,
                 lessonOrder: (currentLesson as any).order,
+                allLessons: course.lessons,
                 userId,
                 courseId,
                 lessonId,
@@ -159,6 +173,12 @@ export async function regenerateLesson(
         // Verify the user owns the course
         const course = await prisma.course.findUnique({
             where: { id: courseId },
+            include: {
+                lessons: {
+                    select: { title: true, order: true },
+                    orderBy: { order: "asc" },
+                },
+            },
         });
 
         if (!course) {
@@ -173,25 +193,31 @@ export async function regenerateLesson(
 
         let currentLesson = null;
 
-        await prisma.$transaction(async (tx) => {
-            const lesson = await tx.lesson.findUnique({
-                where: { id: lessonId, courseId },
-            });
+        await prisma.$transaction(
+            async (tx) => {
+                const lesson = await tx.lesson.findUnique({
+                    where: { id: lessonId, courseId },
+                });
 
-            if (!lesson) {
-                return;
+                if (!lesson) {
+                    return;
+                }
+
+                if (lesson.status === LessonStatus.LOCKED) {
+                    throw new Error("Lesson is locked");
+                }
+
+                // Lock it to GENERATING
+                currentLesson = await tx.lesson.update({
+                    where: { id: lessonId },
+                    data: { generationStatus: GenerationStatus.GENERATING, content: null },
+                });
+            },
+            {
+                maxWait: 10000,
+                timeout: 15000,
             }
-
-            if (lesson.status === LessonStatus.LOCKED) {
-                throw new Error("Lesson is locked");
-            }
-
-            // Lock it to GENERATING
-            currentLesson = await tx.lesson.update({
-                where: { id: lessonId },
-                data: { generationStatus: GenerationStatus.GENERATING, content: null },
-            });
-        });
+        );
 
         if (!currentLesson) {
             res.status(404).json({ error: "Lesson not found" });
@@ -201,8 +227,10 @@ export async function regenerateLesson(
         // Trigger Out-Of-Band Generation
         runContentAgent({
             courseGoal: course.title,
+            courseDescription: course.description,
             lessonTitle: (currentLesson as any).title,
             lessonOrder: (currentLesson as any).order,
+            allLessons: course.lessons,
             userId,
             courseId,
             lessonId,

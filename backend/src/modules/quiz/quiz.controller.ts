@@ -55,35 +55,41 @@ export async function getQuiz(
         let wasNewlyLocked = false;
         let currentQuiz: any = null;
 
-        await prisma.$transaction(async (tx) => {
-            let quiz = await tx.quiz.findFirst({
-                where: { lessonId },
-                orderBy: { version: "desc" },
-            });
-
-            if (!quiz) {
-                quiz = await tx.quiz.create({
-                    data: {
-                        lessonId,
-                        version: 1,
-                        status: QuizStatus.NOT_GENERATED,
-                    },
+        await prisma.$transaction(
+            async (tx) => {
+                let quiz = await tx.quiz.findFirst({
+                    where: { lessonId },
+                    orderBy: { version: "desc" },
                 });
-            }
 
-            if (
-                quiz.status === QuizStatus.NOT_GENERATED ||
-                quiz.status === QuizStatus.FAILED
-            ) {
-                currentQuiz = await tx.quiz.update({
-                    where: { id: quiz.id },
-                    data: { status: QuizStatus.GENERATING },
-                });
-                wasNewlyLocked = true;
-            } else {
-                currentQuiz = quiz;
+                if (!quiz) {
+                    quiz = await tx.quiz.create({
+                        data: {
+                            lessonId,
+                            version: 1,
+                            status: QuizStatus.NOT_GENERATED,
+                        },
+                    });
+                }
+
+                if (
+                    quiz.status === QuizStatus.NOT_GENERATED ||
+                    quiz.status === QuizStatus.FAILED
+                ) {
+                    currentQuiz = await tx.quiz.update({
+                        where: { id: quiz.id },
+                        data: { status: QuizStatus.GENERATING },
+                    });
+                    wasNewlyLocked = true;
+                } else {
+                    currentQuiz = quiz;
+                }
+            },
+            {
+                maxWait: 10000,
+                timeout: 15000,
             }
-        });
+        );
 
         if (!currentQuiz) {
             res.status(500).json({ error: "Failed to initialize quiz" });
@@ -229,46 +235,52 @@ export async function attemptQuiz(
         const passed = score >= 0.6;
 
         let attempt;
-        await prisma.$transaction(async (tx) => {
-            attempt = await tx.quizAttempt.create({
-                data: {
-                    answers: answers as any,
-                    score,
-                    passed,
-                    quizId: quiz.id,
-                    userId,
-                },
-            });
-
-            if (passed) {
-                await tx.lesson.update({
-                    where: { id: lesson.id },
-                    data: { status: LessonStatus.COMPLETED },
-                });
-
-                const nextLesson = await tx.lesson.findFirst({
-                    where: {
-                        courseId: lesson.courseId,
-                        order: lesson.order + 1,
+        await prisma.$transaction(
+            async (tx) => {
+                attempt = await tx.quizAttempt.create({
+                    data: {
+                        answers: answers as any,
+                        score,
+                        passed,
+                        quizId: quiz.id,
+                        userId,
                     },
                 });
 
-                if (nextLesson && nextLesson.status === LessonStatus.LOCKED) {
+                if (passed) {
                     await tx.lesson.update({
-                        where: { id: nextLesson.id },
-                        data: { status: LessonStatus.AVAILABLE },
+                        where: { id: lesson.id },
+                        data: { status: LessonStatus.COMPLETED },
+                    });
+
+                    const nextLesson = await tx.lesson.findFirst({
+                        where: {
+                            courseId: lesson.courseId,
+                            order: lesson.order + 1,
+                        },
+                    });
+
+                    if (nextLesson && nextLesson.status === LessonStatus.LOCKED) {
+                        await tx.lesson.update({
+                            where: { id: nextLesson.id },
+                            data: { status: LessonStatus.AVAILABLE },
+                        });
+                    }
+                } else {
+                    await tx.quiz.create({
+                        data: {
+                            lessonId,
+                            version: quiz.version + 1,
+                            status: QuizStatus.NOT_GENERATED,
+                        },
                     });
                 }
-            } else {
-                await tx.quiz.create({
-                    data: {
-                        lessonId,
-                        version: quiz.version + 1,
-                        status: QuizStatus.NOT_GENERATED,
-                    },
-                });
+            },
+            {
+                maxWait: 10000,
+                timeout: 15000,
             }
-        });
+        );
 
         if (passed) {
             sendNotification(

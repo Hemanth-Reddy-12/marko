@@ -22,6 +22,8 @@ import {
 import { fetchApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { TutorFloatingButton } from "@/features/tutor/components/TutorFloatingButton";
+import { CourseTutorDrawer } from "@/features/tutor/components/CourseTutorDrawer";
 
 interface Lesson {
     id: string;
@@ -66,6 +68,7 @@ export function CourseDetailsPage() {
     const [course, setCourse] = React.useState<CourseDetail | null>(null);
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState<string | null>(null);
+    const [isTutorOpen, setIsTutorOpen] = React.useState(false);
 
     const [isDeleting, setIsDeleting] = React.useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
@@ -338,6 +341,21 @@ export function CourseDetailsPage() {
                     </div>
                 </div>
             </div>
+        )}
+
+        {courseId && (
+            <>
+                <TutorFloatingButton
+                    isOpen={isTutorOpen}
+                    onToggle={() => setIsTutorOpen((prev) => !prev)}
+                />
+                <CourseTutorDrawer
+                    isOpen={isTutorOpen}
+                    onClose={() => setIsTutorOpen(false)}
+                    courseId={courseId}
+                    courseTitle={course?.title}
+                />
+            </>
         )}
         </>
     );

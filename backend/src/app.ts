@@ -48,6 +48,7 @@ app.get("/api/health", (_, res) => {
 
 app.use("/api/courses", courseRouter);
 app.use("/api/courses/:courseId/lessons", lessonRouter);
+app.use("/api/chat", chatRouter);
 app.use("/api/interviews", chatRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/notifications", notificationRouter);

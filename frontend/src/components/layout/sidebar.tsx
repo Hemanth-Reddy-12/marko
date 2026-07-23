@@ -12,6 +12,7 @@ import {
     LogOut,
     ChevronUp,
     ScrollText,
+    Flame,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "./sidebar-context";
@@ -49,6 +50,12 @@ const primaryNav = [
         icon: ScrollText,
         color: "bg-bauhaus-blue",
     },
+    {
+        label: "Token Usage",
+        path: "/usage",
+        icon: Flame,
+        color: "bg-bauhaus-red",
+    },
 ];
 
 export function AppSidebar() {
@@ -58,15 +65,39 @@ export function AppSidebar() {
     const isMobile = useIsMobile();
     const { collapsed, mobileOpen, setMobileOpen } = useSidebar();
 
-    const handleSignOut = async () => {
-        await signOut();
-        navigate("/login");
-    };
+    const [menuOpen, setMenuOpen] = React.useState(false);
+    const menuRef = React.useRef<HTMLDivElement>(null);
 
     const closeMobile = React.useCallback(
         () => setMobileOpen(false),
         [setMobileOpen],
     );
+
+    const handleMenuClick = React.useCallback(() => {
+        setMenuOpen(false);
+        closeMobile();
+    }, [closeMobile]);
+
+    // Close profile menu when clicking outside
+    React.useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+                setMenuOpen(false);
+            }
+        };
+        if (menuOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [menuOpen]);
+
+    const handleSignOut = async () => {
+        handleMenuClick();
+        await signOut();
+        navigate("/login");
+    };
 
     const renderLogo = () => (
         <div
@@ -130,16 +161,13 @@ export function AppSidebar() {
     );
 
     const renderProfile = () => (
-        <div className="border-t-2 border-foreground bg-muted group relative">
+        <div ref={menuRef} className="border-t-2 border-foreground bg-muted group relative">
             <button
                 className={cn(
                     "flex items-center w-full h-16 px-4 hover:bg-bauhaus-blue hover:text-white transition-none cursor-pointer focus:outline-none",
                     collapsed && "justify-center px-0",
                 )}
-                onClick={() => {
-                    const menu = document.getElementById("profile-menu");
-                    if (menu) menu.classList.toggle("hidden");
-                }}
+                onClick={() => setMenuOpen((prev) => !prev)}
             >
                 <div className="size-8 bauhaus-border flex-shrink-0 bg-white overflow-hidden">
                     {session?.user?.image ? (
@@ -163,32 +191,41 @@ export function AppSidebar() {
                                 {session?.user?.name || "GUEST"}
                             </span>
                         </div>
-                        <ChevronUp className="size-3 text-muted-foreground group-hover:text-white" />
+                        <ChevronUp className={cn("size-3 text-muted-foreground group-hover:text-white transition-transform duration-200", menuOpen && "rotate-180")} />
                     </>
                 )}
             </button>
 
             {/* Dropdown Menu Overlay */}
-            <div
-                id="profile-menu"
-                className="hidden absolute bottom-full left-0 w-full min-w-56 bg-card bauhaus-border shadow-none border-b-0 z-50"
-            >
-                <Link
-                    to="/settings"
-                    onClick={closeMobile}
-                    className="flex items-center w-full hover:bg-bauhaus-yellow cursor-pointer text-xs py-3 px-4 font-bold uppercase tracking-widest border-b-2 border-foreground transition-none focus:bg-bauhaus-yellow focus:text-black"
+            {menuOpen && (
+                <div
+                    className="absolute bottom-full left-0 w-full min-w-56 bg-card bauhaus-border shadow-2xl border-b-0 z-50 animate-in fade-in slide-in-from-bottom-2 duration-150"
                 >
-                    <Settings className="size-4 mr-3" />
-                    Account Settings
-                </Link>
-                <button
-                    onClick={handleSignOut}
-                    className="flex items-center w-full hover:bg-bauhaus-red cursor-pointer text-xs py-3 px-4 font-bold uppercase tracking-widest text-destructive transition-none focus:bg-bauhaus-red focus:text-white border-none"
-                >
-                    <LogOut className="size-4 mr-3" />
-                    Logout
-                </button>
-            </div>
+                    <Link
+                        to="/settings"
+                        onClick={handleMenuClick}
+                        className="flex items-center w-full hover:bg-bauhaus-yellow cursor-pointer text-xs py-3 px-4 font-bold uppercase tracking-widest border-b-2 border-foreground transition-none focus:bg-bauhaus-yellow focus:text-black"
+                    >
+                        <Settings className="size-4 mr-3" />
+                        Account Settings
+                    </Link>
+                    <Link
+                        to="/usage"
+                        onClick={handleMenuClick}
+                        className="flex items-center w-full hover:bg-bauhaus-blue hover:text-white cursor-pointer text-xs py-3 px-4 font-bold uppercase tracking-widest border-b-2 border-foreground transition-none focus:bg-bauhaus-blue focus:text-white"
+                    >
+                        <Flame className="size-4 mr-3 text-bauhaus-red" />
+                        Token Usage
+                    </Link>
+                    <button
+                        onClick={handleSignOut}
+                        className="flex items-center w-full hover:bg-bauhaus-red cursor-pointer text-xs py-3 px-4 font-bold uppercase tracking-widest text-destructive transition-none focus:bg-bauhaus-red focus:text-white border-none"
+                    >
+                        <LogOut className="size-4 mr-3" />
+                        Logout
+                    </button>
+                </div>
+            )}
         </div>
     );
 

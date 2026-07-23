@@ -1,42 +1,73 @@
-# Core directories
-.kilo/
-.agents/
-.claude/
-design-system/
-skills-lock.json
-.impeccable/
-
 # Dependencies
 node_modules/
+/.pnp
+.pnp.js
 
-# Production/build outputs
+# Build & Output
 dist/
+dist-ssr/
 build/
 out/
+*.tsbuildinfo
+.next/
+.nuxt/
+.vercel/
 
-# Environment files
+# Generated Prisma Client & Caches
+/backend/src/generated/prisma/
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+
+# Environment & Secrets
 .env
 .env.local
-.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
 *.env
+*.env.*
 
-# Log files
+# Logs & Temporary Files
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+lerna-debug.log*
+*.tmp
+*.temp
+*.bak
+scratch/
+**/scratch/
 
-# System / Editor files
+# System & OS Files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
-.vscode/
+desktop.ini
+
+# IDEs & Editor Files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
 .idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-.vercel
+*.swp
 
+# Agent & Workspace Tooling
 .kilo/
+.agents/
+.claude/
+.impeccable/
+skills-lock.json

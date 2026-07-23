@@ -6,6 +6,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, CheckCircle2, Lock, Circle, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TutorFloatingButton } from "@/features/tutor/components/TutorFloatingButton";
+import { CourseTutorDrawer } from "@/features/tutor/components/CourseTutorDrawer";
 
 interface CourseHeader {
     id: string;
@@ -30,6 +32,9 @@ export function LessonPage() {
     const navigate = useNavigate();
     const [course, setCourse] = React.useState<CourseHeader | null>(null);
     const [loading, setLoading] = React.useState(true);
+    const [isTutorOpen, setIsTutorOpen] = React.useState(false);
+
+    const currentLesson = course?.lessons.find((l) => l.id === lessonId);
 
     React.useEffect(() => {
         if (!courseId) return;
@@ -152,6 +157,20 @@ export function LessonPage() {
                     />
                 </ScrollArea>
             </div>
+
+            {/* AI Course Tutor Floating Action & Drawer */}
+            <TutorFloatingButton
+                isOpen={isTutorOpen}
+                onToggle={() => setIsTutorOpen((prev) => !prev)}
+            />
+            <CourseTutorDrawer
+                isOpen={isTutorOpen}
+                onClose={() => setIsTutorOpen(false)}
+                courseId={courseId}
+                courseTitle={course?.title}
+                lessonId={lessonId}
+                lessonTitle={currentLesson?.title}
+            />
         </div>
     );
 }
